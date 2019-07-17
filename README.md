@@ -1,2 +1,2 @@
 # AsomeR
-asmr audio tools
+asmr audio tools, written in JavaScript.
