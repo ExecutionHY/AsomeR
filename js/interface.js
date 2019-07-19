@@ -41,7 +41,8 @@ var Interface = function() {
         _renderer.setClearColor(BGCOLOR);
 
         _camera = new THREE.PerspectiveCamera(70, 4 / 3, 0.01, 10);
-        _camera.position.set(0, 0, 1);
+        _camera.position.set(1, 1, 2);
+        _camera.position.normalize();
         _controls = new THREE.OrbitControls(_camera, _renderer.domElement);
         _controls.enablePan = false;
 
@@ -68,16 +69,21 @@ var Interface = function() {
         _slider.style.position = "relative";
         _slider.style.left = "-15px";
         _slider.style.color = "black";
-        _slider.max = 0.5;
-        _slider.min = -0.5;
+        _slider.max = 0.4;
+        _slider.min = -0.4;
         _slider.step = 0.01;
         _slider.value = 0;
         document.body.appendChild(_slider);
 
+        // add listener for panning the obj in x-z plane
         _rendererFromUp.domElement.addEventListener('mousedown', onMouseDown, false);
+        // moving obj in y-axis
+        _rendererFromUp.domElement.addEventListener('wheel', onWheel, false);
+        _rendererFromUp.domElement.addEventListener('wheel', onWheel, false);
         _controls.addEventListener('change', _renderCanvas);
         _controlsFromUp.addEventListener('change', _renderCanvas);
         _slider.addEventListener('mousemove', _renderCanvas);
+        // document.addEventListener('onkeydown', onKeyDown, false);
 
         _renderCanvas();
     };
@@ -147,9 +153,17 @@ var Interface = function() {
     }
 
     function onMouseUp(event) {
+        event.preventDefault();
         _movingState = 0;
         _rendererFromUp.domElement.removeEventListener('mousemove', onMouseMove, false);
         _rendererFromUp.domElement.removeEventListener('mouseup', onMouseUp, false);
+    }
+
+    function onWheel(event) {
+        event.preventDefault();
+        if (event.deltaY < 0) _slider.value = parseFloat(_slider.value) - 0.05;
+        if (event.deltaY > 0) _slider.value = parseFloat(_slider.value) + 0.05;
+        _renderCanvas();
     }
 
 };
