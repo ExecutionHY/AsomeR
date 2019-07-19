@@ -1,7 +1,6 @@
 window.onload = function() {
     var interface = new Interface();
     interface.init();
-    interface.start();
 };
 
 var Interface = function() {
@@ -61,51 +60,64 @@ var Interface = function() {
         document.body.appendChild(_renderer.domElement);
         document.body.appendChild(_rendererFromUp.domElement);
         _slider = document.createElement("INPUT");
-        _slider.setAttribute("type", "range");
-        _slider.setAttribute("style", "writing-mode: bt-lr;-webkit-appearance: slider-vertical");
+        _slider.type = "range";
+        _slider.style.writingMode = "bt-lr"; // for IE
+        _slider.style.webkitAppearance = "slider-vertical"; // for chrome
+        _slider.style.width = "10px";
+        _slider.style.height = String(HEIGHT) + "px";
+        _slider.style.position = "relative";
+        _slider.style.left = "-15px";
+        _slider.style.color = "black";
+        _slider.max = 0.5;
+        _slider.min = -0.5;
+        _slider.step = 0.01;
+        _slider.value = 0;
         document.body.appendChild(_slider);
 
         _rendererFromUp.domElement.addEventListener('mousedown', onMouseDown, false);
+        _controls.addEventListener('change', _renderCanvas);
+        _controlsFromUp.addEventListener('change', _renderCanvas);
+        _slider.addEventListener('mousemove', _renderCanvas);
 
+        _renderCanvas();
     };
-    this.start = function() {
-        animate();
-    }
 
     //
     // internals
     //
 
-    function animate() {
+    function _renderCanvas() {
 
-        requestAnimationFrame(animate);
-        _controls.update();
+        //requestAnimationFrame(animate);
+
+        mesh3.position.y = _slider.value;
+        //_controls.update();
         _renderer.render(_scene, _camera);
         _controlsFromUp.zoom = _controls.zoom;
-        _controlsFromUp.update();
+        //_controlsFromUp.update();
         _rendererFromUp.render(_scene, _cameraFromUp);
 
-    };
+    }
 
-    var _raycaster = new THREE.Raycaster();
     var _mouse = new THREE.Vector2();
     var _panStart = new THREE.Vector2();
     var _panScale = new THREE.Vector2();
-    var _state = 0;
+    var _movingState = 0;
 
+    // check if mouse is click on the object
     function pickupObjects(e, object) {
-        //将鼠标点击位置的屏幕坐标转成threejs中的标准坐标
+        // to coord [-1, 1]
         _mouse.x = (e.offsetX / WIDTH) * 2 - 1;
         _mouse.y = -(e.offsetY / HEIGHT) * 2 + 1;
-        //从相机发射一条射线，经过鼠标点击位置
-        _raycaster.setFromCamera(_mouse, _cameraFromUp);
-        //计算射线相机到的对象，可能有多个对象，因此返回的是一个数组，按离相机远近排列
-        let intersects = _raycaster.intersectObject(object);
+        // use raycaster to build
+        var raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(_mouse, _cameraFromUp);
+        var intersects = raycaster.intersectObject(object);
         if (intersects.length) {
             _panScale.x = intersects[0].point.x / _mouse.x;
             _panScale.y = intersects[0].point.z / _mouse.y;
             _panStart.set(_mouse.x, _mouse.y);
-            _state = 1;
+            _movingState = 1;
         }
     }
 
@@ -122,19 +134,20 @@ var Interface = function() {
 
     function onMouseMove(event) {
         event.preventDefault();
-        if (!_state) return;
+        if (!_movingState) return;
 
         _mouse.x = (event.offsetX / WIDTH) * 2 - 1;
         _mouse.y = -(event.offsetY / HEIGHT) * 2 + 1;
 
         mesh3.position.x += (_mouse.x - _panStart.x) * _panScale.x;
         mesh3.position.z += (_mouse.y - _panStart.y) * _panScale.y;
-        //mesh3.position.y = mv.y;
 
         _panStart.copy(_mouse);
+        _renderCanvas();
     }
 
     function onMouseUp(event) {
+        _movingState = 0;
         _rendererFromUp.domElement.removeEventListener('mousemove', onMouseMove, false);
         _rendererFromUp.domElement.removeEventListener('mouseup', onMouseUp, false);
     }
