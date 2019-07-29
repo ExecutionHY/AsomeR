@@ -11,10 +11,14 @@ var Interface = function() {
     var ball, mesh3;
 
     var _slider;
+    var _listener;
+    var _sound;
 
     var WIDTH = 600,
         HEIGHT = 450;
     var BGCOLOR = 0xcccdd4;
+
+    var FFTSIZE = 128;
 
     //
     // public methods
@@ -57,9 +61,12 @@ var Interface = function() {
         _controlsFromUp.enablePan = false;
         _controlsFromUp.enableRotate = false;
 
+        // build the views
+        var container = document.getElementById('container');
+        container.appendChild(_renderer.domElement);
+        container.appendChild(_rendererFromUp.domElement);
+        _rendererFromUp.domElement.style.position = "relative";
 
-        document.body.appendChild(_renderer.domElement);
-        document.body.appendChild(_rendererFromUp.domElement);
         _slider = document.createElement("INPUT");
         _slider.type = "range";
         _slider.style.writingMode = "bt-lr"; // for IE
@@ -67,25 +74,68 @@ var Interface = function() {
         _slider.style.width = "10px";
         _slider.style.height = String(HEIGHT) + "px";
         _slider.style.position = "relative";
-        _slider.style.left = "-15px";
+        _slider.style.left = String(0 - 15) + "px";
         _slider.style.color = "black";
         _slider.max = 0.4;
         _slider.min = -0.4;
         _slider.step = 0.01;
         _slider.value = 0;
-        document.body.appendChild(_slider);
+        container.appendChild(_slider);
+        var visualizer = visualizerInit();
+        container.appendChild(visualizer);
 
         // add listener for panning the obj in x-z plane
         _rendererFromUp.domElement.addEventListener('mousedown', onMouseDown, false);
         // moving obj in y-axis
         _rendererFromUp.domElement.addEventListener('wheel', onWheel, false);
-        _rendererFromUp.domElement.addEventListener('wheel', onWheel, false);
         _controls.addEventListener('change', _renderCanvas);
         _controlsFromUp.addEventListener('change', _renderCanvas);
         _slider.addEventListener('mousemove', _renderCanvas);
-        // document.addEventListener('onkeydown', onKeyDown, false);
 
         _renderCanvas();
+
+        _listener = new THREE.AudioListener();
+        mesh2.add(_listener);
+        _sound = new THREE.PositionalAudio(_listener);
+        // load a sound and set it as the PositionalAudio object's buffer
+        var audioLoader = new THREE.AudioLoader();
+
+        // if (typeof RecordRTC_Extension === 'undefined') {
+        //     alert('RecordRTC chrome extension is either disabled or not installed.');
+        // }
+
+        // var recorder = new RecordRTC_Extension();
+
+        audioLoader.load('assets/test.mp3', function(buffer) {
+            mesh3.add(_sound);
+            _sound.setBuffer(buffer);
+            _sound.setRefDistance(0.2);
+            _sound.loop = true;
+            //_sound.setMaxDistance(0.2);
+            _sound.play();
+            visualizerLoad(_sound);
+            // recorder.startRecording({
+            //     // enableScreen: true,
+            //     // enableMicrophone: true,
+            //     enableSpeakers: true,
+
+            //     enableTabCaptureAPI: true
+            //         // enableTabCaptureAPIAudioOnly: true
+
+
+            // }, function() {
+            //     setTimeout(function() {
+            //         recorder.stopRecording(function(blob) {
+            //             console.log(blob.size, blob);
+            //             var url = URL.createObjectURL(blob);
+            //             video.src = url;
+            //         });
+            //     }, 10000);
+            // });
+
+
+        });
+
     };
 
     //
@@ -165,5 +215,72 @@ var Interface = function() {
         if (event.deltaY > 0) _slider.value = parseFloat(_slider.value) + 0.05;
         _renderCanvas();
     }
+    var _renderVis, _sceneVis, _cameraVis, _analyserVis, _uniformsVis;
+
+    function visualizerInit() {
+
+        //var container = document.getElementById('container');
+        _renderVis = new THREE.WebGLRenderer({ antialias: true });
+        _renderVis.setSize(WIDTH / 2, HEIGHT / 2);
+        _renderVis.setClearColor(0x000000);
+        _renderVis.setPixelRatio(window.devicePixelRatio);
+        //container.appendChild(_renderVis.domElement);
+        _renderVis.domElement.style.position = "relative";
+        _sceneVis = new THREE.Scene();
+        _cameraVis = new THREE.Camera();
+
+        //
+        //window.addEventListener('resize', onResize, false);
+        _renderVis.render(_sceneVis, _cameraVis);
+        return _renderVis.domElement;
+    }
+
+    function visualizerLoad(sound) {
+        _analyserVis = new THREE.AudioAnalyser(sound, FFTSIZE);
+        //
+        _uniformsVis = {
+            tAudioData: { value: new THREE.DataTexture(_analyserVis.data, FFTSIZE / 2, 1, THREE.LuminanceFormat) }
+        };
+        var VertexShaderSrc = `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = vec4( position, 1.0 );
+            }
+        `;
+        var FragmentShaderSrc = `
+            uniform sampler2D tAudioData;
+            varying vec2 vUv;
+            void main() {
+                vec3 backgroundColor = vec3( 0.125, 0.125, 0.125 );
+                vec3 color = vec3( 1.0, 1.0, 0.0 );
+                float f = texture2D( tAudioData, vec2( vUv.x, 0.0 ) ).r;
+                float i = step( vUv.y, f ) * step( f - 0.0125, vUv.y );
+                gl_FragColor = vec4( mix( backgroundColor, color, i ), 1.0 );
+            }
+        `;
+        var material = new THREE.ShaderMaterial({
+            uniforms: _uniformsVis,
+            vertexShader: VertexShaderSrc,
+            fragmentShader: FragmentShaderSrc
+        });
+        var geometry = new THREE.PlaneBufferGeometry(1.95, 1.95);
+        var mesh = new THREE.Mesh(geometry, material);
+        _sceneVis.add(mesh);
+        visualizerAnimate();
+
+    }
+
+    function visualizerAnimate() {
+        requestAnimationFrame(visualizerAnimate);
+        visualizerRender();
+    }
+
+    function visualizerRender() {
+        _analyserVis.getFrequencyData();
+        _uniformsVis.tAudioData.value.needsUpdate = true;
+        _renderVis.render(_sceneVis, _cameraVis);
+    }
+
 
 };
