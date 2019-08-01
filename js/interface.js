@@ -40,6 +40,7 @@ var Interface = function() {
         mesh3.position.z = 0.5;
         _scene.add(mesh3);
 
+        // build main renderer
         _renderer = new THREE.WebGLRenderer({ antialias: true });
         _renderer.setSize(WIDTH, HEIGHT);
         _renderer.setClearColor(BGCOLOR);
@@ -50,6 +51,7 @@ var Interface = function() {
         _controls = new THREE.OrbitControls(_camera, _renderer.domElement);
         _controls.enablePan = false;
 
+        // build up renderer
         _rendererFromUp = new THREE.WebGLRenderer({ antialias: true });
         _rendererFromUp.setSize(WIDTH, HEIGHT);
         _rendererFromUp.setClearColor(BGCOLOR);
@@ -61,8 +63,9 @@ var Interface = function() {
         _controlsFromUp.enablePan = false;
         _controlsFromUp.enableRotate = false;
 
-        // build the views
-        var container = document.getElementById('container');
+        // add canvas to view
+        var container = document.getElementById('left-canvas');
+        container.style.width = String(WIDTH) + "px";
         container.appendChild(_renderer.domElement);
         container.appendChild(_rendererFromUp.domElement);
         _rendererFromUp.domElement.style.position = "relative";
@@ -74,7 +77,8 @@ var Interface = function() {
         _slider.style.width = "10px";
         _slider.style.height = String(HEIGHT) + "px";
         _slider.style.position = "relative";
-        _slider.style.left = String(0 - 15) + "px";
+        _slider.style.top = String(-HEIGHT - 5) + "px";
+        // _slider.style.left = String(0 - 15) + "px";
         _slider.style.color = "black";
         _slider.max = 0.4;
         _slider.min = -0.4;
@@ -82,7 +86,8 @@ var Interface = function() {
         _slider.value = 0;
         container.appendChild(_slider);
         var visualizer = visualizerInit();
-        container.appendChild(visualizer);
+        var rightContainer = document.getElementById('right-tools');
+        rightContainer.appendChild(visualizer);
 
         // add listener for panning the obj in x-z plane
         _rendererFromUp.domElement.addEventListener('mousedown', onMouseDown, false);
@@ -106,7 +111,7 @@ var Interface = function() {
 
         // var recorder = new RecordRTC_Extension();
 
-        audioLoader.load('assets/test.mp3', function(buffer) {
+        audioLoader.load('assets/ash.mp3', function(buffer) {
             mesh3.add(_sound);
             _sound.setBuffer(buffer);
             _sound.setRefDistance(0.2);
@@ -231,6 +236,7 @@ var Interface = function() {
 
         //
         //window.addEventListener('resize', onResize, false);
+        // draw the background color
         _renderVis.render(_sceneVis, _cameraVis);
         return _renderVis.domElement;
     }
@@ -281,6 +287,5 @@ var Interface = function() {
         _uniformsVis.tAudioData.value.needsUpdate = true;
         _renderVis.render(_sceneVis, _cameraVis);
     }
-
 
 };
