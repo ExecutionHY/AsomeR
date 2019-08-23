@@ -13,6 +13,7 @@ var Interface = function() {
     var _slider;
     var _listener;
     var _sound;
+    var _musicList;
 
     var WIDTH = 600,
         HEIGHT = 450;
@@ -25,7 +26,6 @@ var Interface = function() {
     //
 
     this.init = function() {
-
 
         _scene = new THREE.Scene();
         geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
@@ -55,6 +55,7 @@ var Interface = function() {
         _rendererFromUp = new THREE.WebGLRenderer({ antialias: true });
         _rendererFromUp.setSize(WIDTH, HEIGHT);
         _rendererFromUp.setClearColor(BGCOLOR);
+        _rendererFromUp.domElement.style.position = "relative";
 
         _cameraFromUp = new THREE.PerspectiveCamera(70, 4 / 3, 0.01, 10);
         _cameraFromUp.position.set(0, 1, 0);
@@ -68,7 +69,6 @@ var Interface = function() {
         container.style.width = String(WIDTH) + "px";
         container.appendChild(_renderer.domElement);
         container.appendChild(_rendererFromUp.domElement);
-        _rendererFromUp.domElement.style.position = "relative";
 
         _slider = document.createElement("INPUT");
         _slider.type = "range";
@@ -85,9 +85,29 @@ var Interface = function() {
         _slider.step = 0.01;
         _slider.value = 0;
         container.appendChild(_slider);
+        // add visualizer
         var visualizer = visualizerInit();
         var rightContainer = document.getElementById('right-tools');
         rightContainer.appendChild(visualizer);
+
+        _musicList = [
+            'ash.mp3',
+            'donut\ hole.mp3',
+        ]
+
+        var musicListDiv = document.createElement("div");
+        musicListDiv.id = "music-list";
+        musicListDiv.style.height = String(HEIGHT / 2) + "px";
+        musicListDiv.style.borderLeft = "2px solid lightskyblue";
+        for (idx in _musicList) {
+            var songDiv = document.createElement("div");
+            songDiv.textContent = _musicList[idx];
+            songDiv.className = "song";
+            songDiv.addEventListener('click', changeSong, false);
+            musicListDiv.appendChild(songDiv);
+        }
+
+        rightContainer.appendChild(musicListDiv);
 
         // add listener for panning the obj in x-z plane
         _rendererFromUp.domElement.addEventListener('mousedown', onMouseDown, false);
@@ -99,47 +119,8 @@ var Interface = function() {
 
         _renderCanvas();
 
-        _listener = new THREE.AudioListener();
-        mesh2.add(_listener);
-        _sound = new THREE.PositionalAudio(_listener);
-        // load a sound and set it as the PositionalAudio object's buffer
-        var audioLoader = new THREE.AudioLoader();
-
-        // if (typeof RecordRTC_Extension === 'undefined') {
-        //     alert('RecordRTC chrome extension is either disabled or not installed.');
-        // }
-
-        // var recorder = new RecordRTC_Extension();
-
-        audioLoader.load('assets/ash.mp3', function(buffer) {
-            mesh3.add(_sound);
-            _sound.setBuffer(buffer);
-            _sound.setRefDistance(0.2);
-            _sound.loop = true;
-            //_sound.setMaxDistance(0.2);
-            _sound.play();
-            visualizerLoad(_sound);
-            // recorder.startRecording({
-            //     // enableScreen: true,
-            //     // enableMicrophone: true,
-            //     enableSpeakers: true,
-
-            //     enableTabCaptureAPI: true
-            //         // enableTabCaptureAPIAudioOnly: true
 
 
-            // }, function() {
-            //     setTimeout(function() {
-            //         recorder.stopRecording(function(blob) {
-            //             console.log(blob.size, blob);
-            //             var url = URL.createObjectURL(blob);
-            //             video.src = url;
-            //         });
-            //     }, 10000);
-            // });
-
-
-        });
 
     };
 
@@ -220,6 +201,8 @@ var Interface = function() {
         if (event.deltaY > 0) _slider.value = parseFloat(_slider.value) + 0.05;
         _renderCanvas();
     }
+
+    // *********** visualizer content
     var _renderVis, _sceneVis, _cameraVis, _analyserVis, _uniformsVis;
 
     function visualizerInit() {
@@ -288,4 +271,26 @@ var Interface = function() {
         _renderVis.render(_sceneVis, _cameraVis);
     }
 
+    function changeSong(event) {
+        // load music
+        _listener = new THREE.AudioListener();
+        mesh2.add(_listener);
+        if (_sound) _sound.stop();
+        _sound = new THREE.PositionalAudio(_listener);
+        // load a sound and set it as the PositionalAudio object's buffer
+        var audioLoader = new THREE.AudioLoader();
+
+        var song = event.target.innerText;
+        audioLoader.load('assets/music/' + song, function(buffer) {
+            mesh3.add(_sound);
+            _sound.setBuffer(buffer);
+            _sound.setRefDistance(0.2);
+            _sound.loop = false;
+            //_sound.setMaxDistance(0.2);
+            _sound.play();
+            visualizerLoad(_sound);
+
+
+        });
+    }
 };
