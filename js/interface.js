@@ -98,7 +98,7 @@ var Interface = function() {
             var songDiv = document.createElement("div");
             songDiv.textContent = _musicList[idx];
             songDiv.className = "song";
-            songDiv.addEventListener('click', startSong, false);
+            songDiv.addEventListener('click', clickSong, false);
             musicListDiv.appendChild(songDiv);
         }
         _soundList = []
@@ -220,12 +220,7 @@ var Interface = function() {
         return _renderVis.domElement;
     }
 
-    function visualizerLoad(sound) {
-        _analyserVis = new THREE.AudioAnalyser(sound, FFTSIZE);
-        //
-        _uniformsVis = {
-            tAudioData: { value: new THREE.DataTexture(_analyserVis.data, FFTSIZE / 2, 1, THREE.LuminanceFormat) }
-        };
+    function visualizerLoad(uniformsVis) {
         var VertexShaderSrc = `
             varying vec2 vUv;
             void main() {
@@ -245,7 +240,7 @@ var Interface = function() {
             }
         `;
         var material = new THREE.ShaderMaterial({
-            uniforms: _uniformsVis,
+            uniforms: uniformsVis,
             vertexShader: VertexShaderSrc,
             fragmentShader: FragmentShaderSrc
         });
@@ -262,12 +257,21 @@ var Interface = function() {
     }
 
     function visualizerRender() {
-        _analyserVis.getFrequencyData();
-        _uniformsVis.tAudioData.value.needsUpdate = true;
+        let sound;
+        for (soundid in _soundList) {
+            if (_soundList[soundid]['play'] == true) {
+                sound = _soundList[soundid];
+            }
+        }
+        if (typeof(sound) == 'undefined') return;
+
+        // render data of the last song
+        sound['analyserVis'].getFrequencyData();
+        sound['uniformsVis'].tAudioData.value.needsUpdate = true;
         _renderVis.render(_sceneVis, _cameraVis);
     }
 
-    function startSong(event) {
+    function clickSong(event) {
         var stop = 0;
         if (event.target.className.indexOf('active') != -1) {
             event.target.className = 'song';
@@ -275,11 +279,15 @@ var Interface = function() {
         } else event.target.className = 'song active';
         var songName = event.target.innerText;
         for (soundid in _soundList) {
-            console.log(_soundList[soundid])
             if (_soundList[soundid]['name'] == songName) {
-                if (stop) _soundList[soundid]['sound'].stop();
-                else _soundList[soundid]['sound'].play();
-                visualizerLoad(_soundList[soundid]['sound']);
+                if (stop) {
+                    _soundList[soundid]['sound'].stop();
+                    _soundList[soundid]['play'] = false;
+                } else {
+                    _soundList[soundid]['sound'].play();
+                    _soundList[soundid]['play'] = true;
+                }
+                visualizerLoad(_soundList[soundid]['uniformsVis']);
                 break;
             }
         }
@@ -300,7 +308,13 @@ var Interface = function() {
                 sound.setBuffer(buffer);
                 sound.setRefDistance(0.2);
                 sound.loop = true;
-                _soundList.push({ 'id': songid, 'name': _musicList[songid], 'sound': sound });
+
+                let analyserVis = new THREE.AudioAnalyser(sound, FFTSIZE);
+                let uniformsVis = {
+                    tAudioData: { value: new THREE.DataTexture(analyserVis.data, FFTSIZE / 2, 1, THREE.LuminanceFormat) }
+                };
+
+                _soundList.push({ 'id': songid, 'name': _musicList[songid], 'sound': sound, 'uniformsVis': uniformsVis, 'analyserVis': analyserVis, 'play': false });
                 console.log('song ' + songid + ': ' + _musicList[songid] + ' loaded');
                 //_sound.setMaxDistance(0.2);
                 //_sound.play();
