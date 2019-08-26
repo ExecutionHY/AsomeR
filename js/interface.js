@@ -14,6 +14,7 @@ var Interface = function() {
     var _listener;
     var _sound;
     var _musicList;
+    var _soundList;
 
     var WIDTH = 600,
         HEIGHT = 450;
@@ -72,14 +73,9 @@ var Interface = function() {
 
         _slider = document.createElement("INPUT");
         _slider.type = "range";
-        _slider.style.writingMode = "bt-lr"; // for IE
-        _slider.style.webkitAppearance = "slider-vertical"; // for chrome
-        _slider.style.width = "10px";
+        _slider.className = "height-slider";
         _slider.style.height = String(HEIGHT) + "px";
-        _slider.style.position = "relative";
         _slider.style.top = String(-HEIGHT - 5) + "px";
-        // _slider.style.left = String(0 - 15) + "px";
-        _slider.style.color = "black";
         _slider.max = 0.4;
         _slider.min = -0.4;
         _slider.step = 0.01;
@@ -98,14 +94,14 @@ var Interface = function() {
         var musicListDiv = document.createElement("div");
         musicListDiv.id = "music-list";
         musicListDiv.style.height = String(HEIGHT / 2) + "px";
-        musicListDiv.style.borderLeft = "2px solid lightskyblue";
         for (idx in _musicList) {
             var songDiv = document.createElement("div");
             songDiv.textContent = _musicList[idx];
             songDiv.className = "song";
-            songDiv.addEventListener('click', changeSong, false);
+            songDiv.addEventListener('click', startSong, false);
             musicListDiv.appendChild(songDiv);
         }
+        _soundList = []
 
         rightContainer.appendChild(musicListDiv);
 
@@ -119,7 +115,7 @@ var Interface = function() {
 
         _renderCanvas();
 
-
+        loadSongs();
 
 
     };
@@ -271,26 +267,47 @@ var Interface = function() {
         _renderVis.render(_sceneVis, _cameraVis);
     }
 
-    function changeSong(event) {
+    function startSong(event) {
+        var stop = 0;
+        if (event.target.className.indexOf('active') != -1) {
+            event.target.className = 'song';
+            stop = 1;
+        } else event.target.className = 'song active';
+        var songName = event.target.innerText;
+        for (soundid in _soundList) {
+            console.log(_soundList[soundid])
+            if (_soundList[soundid]['name'] == songName) {
+                if (stop) _soundList[soundid]['sound'].stop();
+                else _soundList[soundid]['sound'].play();
+                visualizerLoad(_soundList[soundid]['sound']);
+                break;
+            }
+        }
+    }
+
+    function loadSongs() {
         // load music
         _listener = new THREE.AudioListener();
         mesh2.add(_listener);
-        if (_sound) _sound.stop();
-        _sound = new THREE.PositionalAudio(_listener);
-        // load a sound and set it as the PositionalAudio object's buffer
-        var audioLoader = new THREE.AudioLoader();
 
-        var song = event.target.innerText;
-        audioLoader.load('assets/music/' + song, function(buffer) {
-            mesh3.add(_sound);
-            _sound.setBuffer(buffer);
-            _sound.setRefDistance(0.2);
-            _sound.loop = false;
-            //_sound.setMaxDistance(0.2);
-            _sound.play();
-            visualizerLoad(_sound);
+        // must use let, otherwise songid will always be the last id, when these audio is loaded
+        for (let songid in _musicList) {
+            let sound = new THREE.PositionalAudio(_listener);
+            // load a sound and set it as the PositionalAudio object's buffer
+            let audioLoader = new THREE.AudioLoader();
+            audioLoader.load('assets/music/' + _musicList[songid], function(buffer) {
+                mesh3.add(sound);
+                sound.setBuffer(buffer);
+                sound.setRefDistance(0.2);
+                sound.loop = true;
+                _soundList.push({ 'id': songid, 'name': _musicList[songid], 'sound': sound });
+                console.log('song ' + songid + ': ' + _musicList[songid] + ' loaded');
+                //_sound.setMaxDistance(0.2);
+                //_sound.play();
+                //visualizerLoad(_sound);
+            });
+        }
 
 
-        });
     }
 };

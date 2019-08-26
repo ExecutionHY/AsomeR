@@ -1,0 +1,27 @@
+.height-slider {
+    writing-mode: bt-lr;
+    -webkit-appearance: slider-vertical;
+    width: 10px;
+    height: 450px;
+    position: relative;
+    top: -455px;
+    color: black;
+}
+
+#music-list {
+    height: 225px;
+    border-left: 2px solid lightskyblue;
+}
+
+.song {
+    padding: 10px;
+    cursor: pointer;
+}
+
+#music-list :hover {
+    background: lightcyan;
+}
+
+#music-list .active {
+    background: cyan;
+}
