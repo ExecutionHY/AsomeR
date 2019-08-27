@@ -10,6 +10,11 @@ var Interface = function() {
     var geometry2, material2, mesh2;
     var ball, mesh3;
 
+
+    var _colorList = [0xff5555, 0xffff55, 0x55Ff55, 0x5555ff];
+    var _ballList;
+    var _ballStateLists;
+
     var _slider;
     var _listener;
     var _sound;
@@ -31,15 +36,24 @@ var Interface = function() {
         _scene = new THREE.Scene();
         geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
         geometry2 = new THREE.BoxGeometry(0.6, 0.1, 0.1);
-        ball = new THREE.SphereGeometry(0.02, 100, 100);
         material = new THREE.MeshNormalMaterial();
         mesh = new THREE.Mesh(geometry, material);
         _scene.add(mesh);
         mesh2 = new THREE.Mesh(geometry2, material);
         _scene.add(mesh2);
-        mesh3 = new THREE.Mesh(ball, material);
-        mesh3.position.z = 0.5;
-        _scene.add(mesh3);
+        // mesh3 = new THREE.Mesh(ball, material);
+        // mesh3.position.z = 0.5;
+        // _scene.add(mesh3);
+        ball = new THREE.SphereGeometry(0.02, 100, 100);
+        _ballList = [];
+        for (let i = 0; i < 4; i++) {
+            let mtl = new THREE.MeshBasicMaterial({ color: _colorList[i] });
+            mtl.visible = false;
+            let mesh = new THREE.Mesh(ball, mtl);
+            mesh.position.z = 0.5;
+            _ballList.push(mesh);
+            _scene.add(mesh);
+        }
 
         // build main renderer
         _renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -56,7 +70,7 @@ var Interface = function() {
         _rendererFromUp = new THREE.WebGLRenderer({ antialias: true });
         _rendererFromUp.setSize(WIDTH, HEIGHT);
         _rendererFromUp.setClearColor(BGCOLOR);
-        _rendererFromUp.domElement.style.position = "relative";
+        _rendererFromUp.domElement.style.position = 'relative';
 
         _cameraFromUp = new THREE.PerspectiveCamera(70, 4 / 3, 0.01, 10);
         _cameraFromUp.position.set(0, 1, 0);
@@ -67,21 +81,22 @@ var Interface = function() {
 
         // add canvas to view
         var container = document.getElementById('left-canvas');
-        container.style.width = String(WIDTH) + "px";
+        container.style.width = String(WIDTH) + 'px';
         container.appendChild(_renderer.domElement);
         container.appendChild(_rendererFromUp.domElement);
 
-        _slider = document.createElement("INPUT");
-        _slider.type = "range";
-        _slider.className = "height-slider";
-        _slider.style.height = String(HEIGHT) + "px";
-        _slider.style.top = String(-HEIGHT - 5) + "px";
+        _slider = document.createElement('INPUT');
+        _slider.type = 'range';
+        _slider.className = 'height-slider';
+        _slider.style.height = String(HEIGHT) + 'px';
+        _slider.style.top = String(-HEIGHT - 5) + 'px';
         _slider.max = 0.4;
         _slider.min = -0.4;
         _slider.step = 0.01;
         _slider.value = 0;
         container.appendChild(_slider);
         // add visualizer
+        _soundList = [];
         var visualizer = visualizerInit();
         var rightContainer = document.getElementById('right-tools');
         rightContainer.appendChild(visualizer);
@@ -91,19 +106,41 @@ var Interface = function() {
             'donut\ hole.mp3',
         ]
 
-        var musicListDiv = document.createElement("div");
-        musicListDiv.id = "music-list";
-        musicListDiv.style.height = String(HEIGHT / 2) + "px";
+        var musicCtrlDiv = document.createElement('div');
+        musicCtrlDiv.id = 'music-ctrl';
+
+        var musicListDiv = document.createElement('div');
+        musicListDiv.id = 'music-list';
+
+        var ctrlListDiv = document.createElement('div');
+        ctrlListDiv.id = 'ctrl-list';
+        _ballStateLists = [];
         for (idx in _musicList) {
-            var songDiv = document.createElement("div");
+            var songDiv = document.createElement('div');
             songDiv.textContent = _musicList[idx];
-            songDiv.className = "song";
+            songDiv.className = 'song';
+            songDiv.id = idx;
             songDiv.addEventListener('click', clickSong, false);
             musicListDiv.appendChild(songDiv);
+            let ctrlDiv = document.createElement('div');
+            ctrlDiv.className = 'ctrl-sel';
+            let stateList = []
+            for (i = 1; i <= 4; i++) {
+                let ctrlItem = document.createElement('div');
+                ctrlItem.textContent = String(i);
+                ctrlItem.setAttribute('sid', idx);
+                ctrlItem.setAttribute('cid', i - 1);
+                ctrlItem.className = 'ctrl-item c' + String(i);
+                ctrlItem.addEventListener('click', clickCtrlItem, false);
+                ctrlDiv.appendChild(ctrlItem);
+                stateList.push(false);
+            }
+            ctrlListDiv.appendChild(ctrlDiv);
+            _ballStateLists.push(stateList);
         }
-        _soundList = []
-
-        rightContainer.appendChild(musicListDiv);
+        musicCtrlDiv.appendChild(musicListDiv);
+        musicCtrlDiv.appendChild(ctrlListDiv);
+        rightContainer.appendChild(musicCtrlDiv);
 
         // add listener for panning the obj in x-z plane
         _rendererFromUp.domElement.addEventListener('mousedown', onMouseDown, false);
@@ -127,8 +164,8 @@ var Interface = function() {
     function _renderCanvas() {
 
         //requestAnimationFrame(animate);
+        _ballList[0].position.y = _slider.value;
 
-        mesh3.position.y = _slider.value;
         //_controls.update();
         _renderer.render(_scene, _camera);
         _controlsFromUp.zoom = _controls.zoom;
@@ -163,7 +200,7 @@ var Interface = function() {
         event.preventDefault();
         switch (event.button) {
             case THREE.MOUSE.LEFT:
-                pickupObjects(event, mesh3);
+                pickupObjects(event, _ballList[0]);
                 _rendererFromUp.domElement.addEventListener('mousemove', onMouseMove, false);
                 _rendererFromUp.domElement.addEventListener('mouseup', onMouseUp, false);
                 break;
@@ -177,8 +214,8 @@ var Interface = function() {
         _mouse.x = (event.offsetX / WIDTH) * 2 - 1;
         _mouse.y = -(event.offsetY / HEIGHT) * 2 + 1;
 
-        mesh3.position.x += (_mouse.x - _panStart.x) * _panScale.x;
-        mesh3.position.z += (_mouse.y - _panStart.y) * _panScale.y;
+        _ballList[0].position.x += (_mouse.x - _panStart.x) * _panScale.x;
+        _ballList[0].position.z += (_mouse.y - _panStart.y) * _panScale.y;
 
         _panStart.copy(_mouse);
         _renderCanvas();
@@ -199,9 +236,12 @@ var Interface = function() {
     }
 
     // *********** visualizer content
-    var _renderVis, _sceneVis, _cameraVis, _analyserVis, _uniformsVis;
+    var _renderVis, _sceneVis, _cameraVis, _materialVis;
+    var _currentVisId, _nextVisId;
 
     function visualizerInit() {
+        _nextVisId = -1;
+        _currentVisId = -1;
 
         //var container = document.getElementById('container');
         _renderVis = new THREE.WebGLRenderer({ antialias: true });
@@ -209,18 +249,22 @@ var Interface = function() {
         _renderVis.setClearColor(0x000000);
         _renderVis.setPixelRatio(window.devicePixelRatio);
         //container.appendChild(_renderVis.domElement);
-        _renderVis.domElement.style.position = "relative";
+        _renderVis.domElement.style.position = 'relative';
         _sceneVis = new THREE.Scene();
         _cameraVis = new THREE.Camera();
 
         //
         //window.addEventListener('resize', onResize, false);
+
         // draw the background color
         _renderVis.render(_sceneVis, _cameraVis);
+
+        visualizerAnimate();
         return _renderVis.domElement;
     }
 
     function visualizerLoad(uniformsVis) {
+
         var VertexShaderSrc = `
             varying vec2 vUv;
             void main() {
@@ -239,16 +283,15 @@ var Interface = function() {
                 gl_FragColor = vec4( mix( backgroundColor, color, i ), 1.0 );
             }
         `;
-        var material = new THREE.ShaderMaterial({
+        _materialVis = new THREE.ShaderMaterial({
             uniforms: uniformsVis,
             vertexShader: VertexShaderSrc,
             fragmentShader: FragmentShaderSrc
         });
         var geometry = new THREE.PlaneBufferGeometry(1.95, 1.95);
-        var mesh = new THREE.Mesh(geometry, material);
+        var mesh = new THREE.Mesh(geometry, _materialVis);
+        _sceneVis = new THREE.Scene(); // refresh the scene
         _sceneVis.add(mesh);
-        visualizerAnimate();
-
     }
 
     function visualizerAnimate() {
@@ -257,40 +300,53 @@ var Interface = function() {
     }
 
     function visualizerRender() {
-        let sound;
-        for (soundid in _soundList) {
-            if (_soundList[soundid]['play'] == true) {
-                sound = _soundList[soundid];
+
+        if (_soundList.length == 0) return;
+
+        if (_currentVisId != _nextVisId) {
+            _currentVisId = _nextVisId;
+            if (_currentVisId != -1) {
+                visualizerLoad(_soundList[_currentVisId]['uniformsVis']);
             }
         }
-        if (typeof(sound) == 'undefined') return;
+        // if no song is playing, render a black page
+        if (_currentVisId == -1) {
+            _sceneVis = new THREE.Scene();
+            _renderVis.render(_sceneVis, _cameraVis);
+            return;
+        }
+        let sound = _soundList[_currentVisId];
 
-        // render data of the last song
+        // render the last song we played
         sound['analyserVis'].getFrequencyData();
         sound['uniformsVis'].tAudioData.value.needsUpdate = true;
         _renderVis.render(_sceneVis, _cameraVis);
     }
 
+    // *********** music list control
+
     function clickSong(event) {
-        var stop = 0;
-        if (event.target.className.indexOf('active') != -1) {
-            event.target.className = 'song';
-            stop = 1;
-        } else event.target.className = 'song active';
-        var songName = event.target.innerText;
-        for (soundid in _soundList) {
-            if (_soundList[soundid]['name'] == songName) {
-                if (stop) {
-                    _soundList[soundid]['sound'].stop();
-                    _soundList[soundid]['play'] = false;
-                } else {
-                    _soundList[soundid]['sound'].play();
-                    _soundList[soundid]['play'] = true;
+        // if this song is playing, pause it
+        // change the style of this DIV
+        // change VisId for VisRender
+        var sid = event.target.id;
+        if (_soundList[sid]['play'] == true) {
+            _soundList[sid]['sound'].pause();
+            _soundList[sid]['play'] = false;
+            event.target.classList.remove('active');
+            _nextVisId = -1;
+            for (ssid in _soundList) {
+                if (_soundList[ssid]['play'] == true) {
+                    _nextVisId = ssid;
                 }
-                visualizerLoad(_soundList[soundid]['uniformsVis']);
-                break;
             }
+        } else {
+            _soundList[sid]['sound'].play();
+            _soundList[sid]['play'] = true;
+            event.target.classList.add('active');
+            _nextVisId = sid;
         }
+
     }
 
     function loadSongs() {
@@ -304,7 +360,6 @@ var Interface = function() {
             // load a sound and set it as the PositionalAudio object's buffer
             let audioLoader = new THREE.AudioLoader();
             audioLoader.load('assets/music/' + _musicList[songid], function(buffer) {
-                mesh3.add(sound);
                 sound.setBuffer(buffer);
                 sound.setRefDistance(0.2);
                 sound.loop = true;
@@ -321,7 +376,31 @@ var Interface = function() {
                 //visualizerLoad(_sound);
             });
         }
-
-
     }
+
+    function clickCtrlItem(event) {
+        var ctrlItem = event.target;
+        var sid = parseInt(ctrlItem.getAttribute('sid'));
+        var cid = parseInt(ctrlItem.getAttribute('cid'));
+
+        _ballStateLists[sid][cid] = !_ballStateLists[sid][cid];
+        if (_ballStateLists[sid][cid]) {
+            ctrlItem.classList.add('active');
+            _ballList[cid].add(_soundList[sid]['sound']);
+        } else {
+            ctrlItem.classList.remove('active');
+            _ballList[cid].add(_soundList[sid]['sound']);
+        }
+        var vis = false;
+        for (ssid in _soundList) {
+            if (_ballStateLists[ssid][cid]) {
+                vis = true;
+                break;
+            }
+        }
+        _ballList[cid].material.visible = vis;
+        _renderCanvas();
+    }
+
+
 };

@@ -8,8 +8,15 @@
     color: black;
 }
 
-#music-list {
+#music-ctrl {
     height: 225px;
+    display: flex;
+}
+
+#music-list {
+    height: 100%;
+    width: 70%;
+    /*float: left;*/
     border-left: 2px solid lightskyblue;
 }
 
@@ -18,10 +25,63 @@
     cursor: pointer;
 }
 
+.song.active {
+    background: cyan;
+}
+
 #music-list :hover {
     background: lightcyan;
 }
 
-#music-list .active {
-    background: cyan;
+#ctrl-list {
+    height: 100%;
+    width: 30%;
+}
+
+.ctrl-sel {
+    display: flex;
+}
+
+.ctrl-item {
+    width: 25%;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.ctrl-item.c1 {
+    background: #ffdddd;
+}
+
+.ctrl-item.active.c1 {
+    background: #ff5555;
+}
+
+.ctrl-item.c2 {
+    background: #ffffdd;
+}
+
+.ctrl-item.active.c2 {
+    background: #ffff55;
+}
+
+.ctrl-item.c3 {
+    background: #ddffdd;
+}
+
+.ctrl-item.active.c3 {
+    background: #55ff55;
+}
+
+.ctrl-item.c4 {
+    background: #ddddff;
+}
+
+.ctrl-item.active.c4 {
+    background: #5555ff;
+}
+
+.ctrl-sel :hover {
+    background: darkgrey;
 }
