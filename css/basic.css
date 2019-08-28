@@ -50,35 +50,40 @@
     text-align: center;
 }
 
-.ctrl-item.c1 {
-    background: #ffdddd;
+.ctrl-item.inactive {
+    cursor: default;
+    background: white;
 }
 
-.ctrl-item.active.c1 {
+.ctrl-item.c0 {
+    background: #ffeeee;
+}
+
+.ctrl-item.active.c0 {
     background: #ff5555;
 }
 
-.ctrl-item.c2 {
-    background: #ffffdd;
+.ctrl-item.c1 {
+    background: #ffffee;
 }
 
-.ctrl-item.active.c2 {
+.ctrl-item.active.c1 {
     background: #ffff55;
 }
 
-.ctrl-item.c3 {
-    background: #ddffdd;
+.ctrl-item.c2 {
+    background: #eeffee;
 }
 
-.ctrl-item.active.c3 {
+.ctrl-item.active.c2 {
     background: #55ff55;
 }
 
-.ctrl-item.c4 {
-    background: #ddddff;
+.ctrl-item.c3 {
+    background: #eeeeff;
 }
 
-.ctrl-item.active.c4 {
+.ctrl-item.active.c3 {
     background: #5555ff;
 }
 

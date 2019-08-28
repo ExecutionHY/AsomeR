@@ -125,11 +125,11 @@ var Interface = function() {
             let ctrlDiv = document.createElement('div');
             ctrlDiv.className = 'ctrl-sel';
             let stateList = []
-            for (i = 1; i <= 4; i++) {
+            for (i = 0; i < 4; i++) {
                 let ctrlItem = document.createElement('div');
                 ctrlItem.textContent = String(i);
                 ctrlItem.setAttribute('sid', idx);
-                ctrlItem.setAttribute('cid', i - 1);
+                ctrlItem.setAttribute('cid', i);
                 ctrlItem.className = 'ctrl-item c' + String(i);
                 ctrlItem.addEventListener('click', clickCtrlItem, false);
                 ctrlDiv.appendChild(ctrlItem);
@@ -389,7 +389,7 @@ var Interface = function() {
             _ballList[cid].add(_soundList[sid]['sound']);
         } else {
             ctrlItem.classList.remove('active');
-            _ballList[cid].add(_soundList[sid]['sound']);
+            _ballList[cid].remove(_soundList[sid]['sound']);
         }
         var vis = false;
         for (ssid in _soundList) {
