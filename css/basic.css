@@ -1,15 +1,47 @@
+#container {
+    height: 900px;
+    display: flex;
+}
+
+#left-canvas {
+    height: 100%;
+    width: 600px;
+}
+
+#right-tools {
+    height: 100%;
+    width: 300px;
+    padding-left: 1%;
+}
+
 .height-slider {
     writing-mode: bt-lr;
     -webkit-appearance: slider-vertical;
     width: 10px;
-    height: 450px;
+    height: 50%;
     position: relative;
-    top: -455px;
+    top: -50.7%;
     color: black;
 }
 
+#log-div {
+    height: 25%;
+    border-left: 2px solid black;
+    margin-top: -2px;
+}
+
+#log {
+    height: 96%;
+    width: 96%;
+    border-width: 0px;
+    padding: 2%;
+    resize: none;
+    outline: none;
+}
+
 #music-ctrl {
-    height: 225px;
+    height: 25%;
+    width: 100%;
     display: flex;
 }
 
@@ -18,6 +50,7 @@
     width: 70%;
     /*float: left;*/
     border-left: 2px solid lightskyblue;
+    margin-top: 2px;
 }
 
 .song {

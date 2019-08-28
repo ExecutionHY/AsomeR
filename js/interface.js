@@ -20,6 +20,7 @@ var Interface = function() {
     var _sound;
     var _musicList;
     var _soundList;
+    var _logTextarea;
 
     var WIDTH = 600,
         HEIGHT = 450;
@@ -70,7 +71,6 @@ var Interface = function() {
         _rendererFromUp = new THREE.WebGLRenderer({ antialias: true });
         _rendererFromUp.setSize(WIDTH, HEIGHT);
         _rendererFromUp.setClearColor(BGCOLOR);
-        _rendererFromUp.domElement.style.position = 'relative';
 
         _cameraFromUp = new THREE.PerspectiveCamera(70, 4 / 3, 0.01, 10);
         _cameraFromUp.position.set(0, 1, 0);
@@ -80,27 +80,36 @@ var Interface = function() {
         _controlsFromUp.enableRotate = false;
 
         // add canvas to view
-        var container = document.getElementById('left-canvas');
-        container.style.width = String(WIDTH) + 'px';
-        container.appendChild(_renderer.domElement);
-        container.appendChild(_rendererFromUp.domElement);
+        var leftContainer = document.getElementById('left-canvas');
+        leftContainer.appendChild(_renderer.domElement);
+        leftContainer.appendChild(_rendererFromUp.domElement);
 
         _slider = document.createElement('INPUT');
         _slider.type = 'range';
         _slider.className = 'height-slider';
-        _slider.style.height = String(HEIGHT) + 'px';
-        _slider.style.top = String(-HEIGHT - 5) + 'px';
         _slider.max = 0.4;
         _slider.min = -0.4;
         _slider.step = 0.01;
         _slider.value = 0;
-        container.appendChild(_slider);
+        leftContainer.appendChild(_slider);
+
+
         // add visualizer
         _soundList = [];
         var visualizer = visualizerInit();
         var rightContainer = document.getElementById('right-tools');
         rightContainer.appendChild(visualizer);
 
+        // log textarea display
+        var logDiv = document.createElement('div');
+        logDiv.id = 'log-div';
+        _logTextarea = document.createElement('textarea');
+        _logTextarea.id = 'log';
+        _logTextarea.setAttribute('readonly', 'readonly');
+        logDiv.appendChild(_logTextarea);
+        rightContainer.appendChild(logDiv);
+
+        // music list display
         _musicList = [
             'ash.mp3',
             'donut\ hole.mp3',
@@ -151,9 +160,9 @@ var Interface = function() {
         _slider.addEventListener('mousemove', _renderCanvas);
 
         _renderCanvas();
+        printLog('canvas initialized.\n');
 
         loadSongs();
-
 
     };
 
@@ -243,13 +252,11 @@ var Interface = function() {
         _nextVisId = -1;
         _currentVisId = -1;
 
-        //var container = document.getElementById('container');
         _renderVis = new THREE.WebGLRenderer({ antialias: true });
         _renderVis.setSize(WIDTH / 2, HEIGHT / 2);
         _renderVis.setClearColor(0x000000);
         _renderVis.setPixelRatio(window.devicePixelRatio);
-        //container.appendChild(_renderVis.domElement);
-        _renderVis.domElement.style.position = 'relative';
+
         _sceneVis = new THREE.Scene();
         _cameraVis = new THREE.Camera();
 
@@ -371,6 +378,7 @@ var Interface = function() {
 
                 _soundList.push({ 'id': songid, 'name': _musicList[songid], 'sound': sound, 'uniformsVis': uniformsVis, 'analyserVis': analyserVis, 'play': false });
                 console.log('song ' + songid + ': ' + _musicList[songid] + ' loaded');
+                printLog('song ' + songid + ': ' + _musicList[songid] + ' loaded\n');
                 //_sound.setMaxDistance(0.2);
                 //_sound.play();
                 //visualizerLoad(_sound);
@@ -402,5 +410,9 @@ var Interface = function() {
         _renderCanvas();
     }
 
+    function printLog(str) {
+        _logTextarea.textContent += str;
+        _logTextarea.scrollTop = _logTextarea.scrollHeight;
+    }
 
 };
