@@ -113,43 +113,45 @@ var Interface = function() {
         _musicList = [
             'ash.mp3',
             'donut\ hole.mp3',
+            'goodnight-story.wav',
         ]
+
 
         var musicCtrlDiv = document.createElement('div');
         musicCtrlDiv.id = 'music-ctrl';
-
         var musicListDiv = document.createElement('div');
         musicListDiv.id = 'music-list';
-
         var ctrlListDiv = document.createElement('div');
         ctrlListDiv.id = 'ctrl-list';
-        _ballStateLists = [];
-        for (idx in _musicList) {
-            var songDiv = document.createElement('div');
-            songDiv.textContent = _musicList[idx];
-            songDiv.className = 'song';
-            songDiv.id = idx;
-            songDiv.addEventListener('click', clickSong, false);
-            musicListDiv.appendChild(songDiv);
-            let ctrlDiv = document.createElement('div');
-            ctrlDiv.className = 'ctrl-sel';
-            let stateList = []
-            for (i = 0; i < 4; i++) {
-                let ctrlItem = document.createElement('div');
-                ctrlItem.textContent = String(i);
-                ctrlItem.setAttribute('sid', idx);
-                ctrlItem.setAttribute('cid', i);
-                ctrlItem.className = 'ctrl-item c' + String(i);
-                ctrlItem.addEventListener('click', clickCtrlItem, false);
-                ctrlDiv.appendChild(ctrlItem);
-                stateList.push(false);
+
+        var addMusicDiv = document.createElement('div');
+        addMusicDiv.className = 'add-music';
+        //addMusicDiv.textContent = '+';
+        var fileInput = document.createElement('input');
+        fileInput.id = 'music-upload';
+        fileInput.type = 'file';
+        fileInput.setAttribute('accept', 'audio/*');
+        fileInput.onchange = function() {
+            let sid = _soundList.length;
+            _soundList.push(null);
+            let soundFile = fileInput.files[0];
+            let soundName = soundFile['name']
+            let reader = new FileReader();
+            reader.readAsDataURL(soundFile);
+            reader.onload = function(e) {
+                console.log(e, soundFile);
+                addNewSongData(this.result, soundName, sid);
             }
-            ctrlListDiv.appendChild(ctrlDiv);
-            _ballStateLists.push(stateList);
+            addNewSongDiv(soundName, sid, musicListDiv, ctrlListDiv);
         }
+
+        addMusicDiv.appendChild(fileInput);
+        musicListDiv.appendChild(addMusicDiv);
+
         musicCtrlDiv.appendChild(musicListDiv);
         musicCtrlDiv.appendChild(ctrlListDiv);
         rightContainer.appendChild(musicCtrlDiv);
+
 
         // add listener for panning the obj in x-z plane
         _rendererFromUp.domElement.addEventListener('mousedown', onMouseDown, false);
@@ -162,7 +164,7 @@ var Interface = function() {
         _renderCanvas();
         printLog('canvas initialized.\n');
 
-        loadSongs();
+        loadSongs(musicListDiv, ctrlListDiv);
 
     };
 
@@ -356,34 +358,70 @@ var Interface = function() {
 
     }
 
-    function loadSongs() {
-        // load music
+    function loadSongs(musicListDiv, ctrlListDiv) {
+
+        _ballStateLists = [];
+        // init listener
         _listener = new THREE.AudioListener();
         mesh2.add(_listener);
 
-        // must use let, otherwise songid will always be the last id, when these audio is loaded
-        for (let songid in _musicList) {
-            let sound = new THREE.PositionalAudio(_listener);
-            // load a sound and set it as the PositionalAudio object's buffer
-            let audioLoader = new THREE.AudioLoader();
-            audioLoader.load('assets/music/' + _musicList[songid], function(buffer) {
-                sound.setBuffer(buffer);
-                sound.setRefDistance(0.2);
-                sound.loop = true;
-
-                let analyserVis = new THREE.AudioAnalyser(sound, FFTSIZE);
-                let uniformsVis = {
-                    tAudioData: { value: new THREE.DataTexture(analyserVis.data, FFTSIZE / 2, 1, THREE.LuminanceFormat) }
-                };
-
-                _soundList.push({ 'id': songid, 'name': _musicList[songid], 'sound': sound, 'uniformsVis': uniformsVis, 'analyserVis': analyserVis, 'play': false });
-                console.log('song ' + songid + ': ' + _musicList[songid] + ' loaded');
-                printLog('song ' + songid + ': ' + _musicList[songid] + ' loaded\n');
-                //_sound.setMaxDistance(0.2);
-                //_sound.play();
-                //visualizerLoad(_sound);
-            });
+        // must use let sid, otherwise sid will always be the last id, when these audio is concurrently loaded
+        for (let sid in _musicList) {
+            _soundList.push(null);
+            addNewSongData('assets/music/' + _musicList[sid], _musicList[sid], sid);
+            addNewSongDiv(_musicList[sid], sid, musicListDiv, ctrlListDiv);
         }
+    }
+
+    function addNewSongData(URL, songName, sid) {
+        let sound = new THREE.PositionalAudio(_listener);
+        // load a sound and set it as the PositionalAudio object's buffer
+        let audioLoader = new THREE.AudioLoader();
+        audioLoader.load(URL, function(buffer) {
+            sound.setBuffer(buffer);
+            sound.setRefDistance(0.2);
+            sound.loop = true;
+
+            let analyserVis = new THREE.AudioAnalyser(sound, FFTSIZE);
+            let uniformsVis = {
+                tAudioData: { value: new THREE.DataTexture(analyserVis.data, FFTSIZE / 2, 1, THREE.LuminanceFormat) }
+            };
+
+            // loading is concurrent, so must use [sid] to save data
+            _soundList[sid] = { 'id': sid, 'name': songName, 'sound': sound, 'uniformsVis': uniformsVis, 'analyserVis': analyserVis, 'play': false };
+            console.log('song ' + sid + ': ' + songName + ' loaded');
+            printLog('song ' + sid + ': ' + songName + ' loaded\n');
+            //_sound.setMaxDistance(0.2);
+            //_sound.play();
+            //visualizerLoad(_sound);
+
+        });
+
+    }
+
+    function addNewSongDiv(songName, sid, musicListDiv, ctrlListDiv) {
+        // add new div for this song
+        let songDiv = document.createElement('div');
+        songDiv.textContent = songName;
+        songDiv.className = 'song';
+        songDiv.id = sid;
+        songDiv.addEventListener('click', clickSong, false);
+        musicListDiv.insertBefore(songDiv, musicListDiv.lastChild);
+        let ctrlDiv = document.createElement('div');
+        ctrlDiv.className = 'ctrl-sel';
+        let stateList = []
+        for (i = 0; i < 4; i++) {
+            let ctrlItem = document.createElement('div');
+            ctrlItem.textContent = String(i);
+            ctrlItem.setAttribute('sid', sid);
+            ctrlItem.setAttribute('cid', i);
+            ctrlItem.className = 'ctrl-item c' + String(i);
+            ctrlItem.addEventListener('click', clickCtrlItem, false);
+            ctrlDiv.appendChild(ctrlItem);
+            stateList.push(false);
+        }
+        ctrlListDiv.appendChild(ctrlDiv);
+        _ballStateLists.push(stateList);
     }
 
     function clickCtrlItem(event) {

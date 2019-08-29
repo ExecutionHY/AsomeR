@@ -43,6 +43,8 @@
     height: 25%;
     width: 100%;
     display: flex;
+    margin-top: 2px;
+    overflow-y: scroll;
 }
 
 #music-list {
@@ -50,16 +52,22 @@
     width: 70%;
     /*float: left;*/
     border-left: 2px solid lightskyblue;
-    margin-top: 2px;
 }
 
 .song {
     padding: 10px;
     cursor: pointer;
+    height: 6%;
 }
 
 .song.active {
     background: cyan;
+}
+
+#music-upload {
+    outline: none;
+    width: 100%;
+    padding: 10px;
 }
 
 #music-list :hover {
@@ -73,6 +81,7 @@
 
 .ctrl-sel {
     display: flex;
+    height: 15%;
 }
 
 .ctrl-item {
