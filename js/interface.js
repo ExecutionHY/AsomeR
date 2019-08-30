@@ -4,14 +4,9 @@ window.onload = function() {
 };
 
 var Interface = function() {
-    var _camera, _scene, _renderer, _controls;
-    var _cameraFromUp, _rendererFromUp, _controlsFromUp;
-    var geometry, material, mesh;
-    var geometry2, material2, mesh2;
-    var ball, mesh3;
 
+    var _myRenderer;
 
-    var _colorList = [0xff5555, 0xffff55, 0x55Ff55, 0x5555ff];
     var _ballList;
     var _ballStateLists;
 
@@ -24,7 +19,6 @@ var Interface = function() {
 
     var WIDTH = 600,
         HEIGHT = 450;
-    var BGCOLOR = 0xcccdd4;
 
     var FFTSIZE = 128;
 
@@ -34,62 +28,20 @@ var Interface = function() {
 
     this.init = function() {
 
-        _scene = new THREE.Scene();
-        geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-        geometry2 = new THREE.BoxGeometry(0.6, 0.1, 0.1);
-        material = new THREE.MeshNormalMaterial();
-        mesh = new THREE.Mesh(geometry, material);
-        _scene.add(mesh);
-        mesh2 = new THREE.Mesh(geometry2, material);
-        _scene.add(mesh2);
-        // mesh3 = new THREE.Mesh(ball, material);
-        // mesh3.position.z = 0.5;
-        // _scene.add(mesh3);
-        ball = new THREE.SphereGeometry(0.02, 100, 100);
-        _ballList = [];
-        for (let i = 0; i < 4; i++) {
-            let mtl = new THREE.MeshBasicMaterial({ color: _colorList[i] });
-            mtl.visible = false;
-            let mesh = new THREE.Mesh(ball, mtl);
-            mesh.position.z = 0.5;
-            _ballList.push(mesh);
-            _scene.add(mesh);
-        }
-
-        // build main renderer
-        _renderer = new THREE.WebGLRenderer({ antialias: true });
-        _renderer.setSize(WIDTH, HEIGHT);
-        _renderer.setClearColor(BGCOLOR);
-
-        _camera = new THREE.PerspectiveCamera(70, 4 / 3, 0.01, 10);
-        _camera.position.set(1, 1, 2);
-        _camera.position.normalize();
-        _controls = new THREE.OrbitControls(_camera, _renderer.domElement);
-        _controls.enablePan = false;
-
-        // build up renderer
-        _rendererFromUp = new THREE.WebGLRenderer({ antialias: true });
-        _rendererFromUp.setSize(WIDTH, HEIGHT);
-        _rendererFromUp.setClearColor(BGCOLOR);
-
-        _cameraFromUp = new THREE.PerspectiveCamera(70, 4 / 3, 0.01, 10);
-        _cameraFromUp.position.set(0, 1, 0);
-        _cameraFromUp.lookAt(0, 0, 0);
-        _controlsFromUp = new THREE.OrbitControls(_cameraFromUp, _renderer.domElement);
-        _controlsFromUp.enablePan = false;
-        _controlsFromUp.enableRotate = false;
+        _myRenderer = new MyRenderer();
 
         // add canvas to view
         var leftContainer = document.getElementById('left-canvas');
-        leftContainer.appendChild(_renderer.domElement);
-        leftContainer.appendChild(_rendererFromUp.domElement);
+        _myRenderer.init(leftContainer, WIDTH, HEIGHT);
+        _ballList = _myRenderer.getBallList();
+
 
         _slider = document.createElement('INPUT');
         _slider.type = 'range';
         _slider.className = 'height-slider';
         _slider.max = 0.4;
         _slider.min = -0.4;
-        _slider.step = 0.01;
+        _slider.step = 0.005;
         _slider.value = 0;
         leftContainer.appendChild(_slider);
 
@@ -113,7 +65,6 @@ var Interface = function() {
         _musicList = [
             'ash.mp3',
             'donut\ hole.mp3',
-            'goodnight-story.wav',
         ]
 
 
@@ -154,17 +105,19 @@ var Interface = function() {
 
 
         // add listener for panning the obj in x-z plane
-        _rendererFromUp.domElement.addEventListener('mousedown', onMouseDown, false);
+        var canvasUp = document.getElementById('canvas-up');
+        canvasUp.addEventListener('mousedown', onMouseDown, false);
         // moving obj in y-axis
-        _rendererFromUp.domElement.addEventListener('wheel', onWheel, false);
-        _controls.addEventListener('change', _renderCanvas);
-        _controlsFromUp.addEventListener('change', _renderCanvas);
-        _slider.addEventListener('mousemove', _renderCanvas);
+        canvasUp.addEventListener('wheel', onWheel, false);
+        _slider.addEventListener('mousemove', onSliderChange);
+        window.addEventListener('resize', onWindowResize);
 
-        _renderCanvas();
+        _myRenderer.renderCanvas();
         printLog('canvas initialized.\n');
 
         loadSongs(musicListDiv, ctrlListDiv);
+        window._myRenderer = _myRenderer;
+        onWindowResize();
 
     };
 
@@ -172,17 +125,16 @@ var Interface = function() {
     // internals
     //
 
-    function _renderCanvas() {
+    function onWindowResize() {
+        WIDTH = window.innerWidth * 2 / 3.1;
+        HEIGHT = window.innerHeight * 1 / 2.1;
+        PixelRatio = 1
+        _myRenderer.resizeCanvas(WIDTH, HEIGHT, PixelRatio);
+        _renderVis.setSize(WIDTH / 2 * PixelRatio, HEIGHT / 2 * PixelRatio);
 
-        //requestAnimationFrame(animate);
-        _ballList[0].position.y = _slider.value;
-
-        //_controls.update();
-        _renderer.render(_scene, _camera);
-        _controlsFromUp.zoom = _controls.zoom;
-        //_controlsFromUp.update();
-        _rendererFromUp.render(_scene, _cameraFromUp);
-
+        document.getElementById('left-canvas').style.width = WIDTH + 'px';
+        document.getElementById('right-tools').style.width = WIDTH / 2 + 'px';
+        document.getElementById('right-tools').style.height = HEIGHT * 2 + 'px';
     }
 
     var _mouse = new THREE.Vector2();
@@ -197,7 +149,7 @@ var Interface = function() {
         _mouse.y = -(e.offsetY / HEIGHT) * 2 + 1;
         // use raycaster to build
         var raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(_mouse, _cameraFromUp);
+        raycaster.setFromCamera(_mouse, _myRenderer.getCameraUp());
         var intersects = raycaster.intersectObject(object);
         if (intersects.length) {
             _panScale.x = intersects[0].point.x / _mouse.x;
@@ -207,13 +159,19 @@ var Interface = function() {
         }
     }
 
+    function onSliderChange(event) {
+        _ballList[0].position.y = _slider.value;
+        _myRenderer.renderCanvas();
+    }
+
     function onMouseDown(event) {
         event.preventDefault();
         switch (event.button) {
             case THREE.MOUSE.LEFT:
                 pickupObjects(event, _ballList[0]);
-                _rendererFromUp.domElement.addEventListener('mousemove', onMouseMove, false);
-                _rendererFromUp.domElement.addEventListener('mouseup', onMouseUp, false);
+                var canvasUp = document.getElementById('canvas-up');
+                canvasUp.addEventListener('mousemove', onMouseMove, false);
+                canvasUp.addEventListener('mouseup', onMouseUp, false);
                 break;
         }
     }
@@ -229,21 +187,22 @@ var Interface = function() {
         _ballList[0].position.z += (_mouse.y - _panStart.y) * _panScale.y;
 
         _panStart.copy(_mouse);
-        _renderCanvas();
+        _myRenderer.renderCanvas();
     }
 
     function onMouseUp(event) {
         event.preventDefault();
         _movingState = 0;
-        _rendererFromUp.domElement.removeEventListener('mousemove', onMouseMove, false);
-        _rendererFromUp.domElement.removeEventListener('mouseup', onMouseUp, false);
+        var canvasUp = document.getElementById('canvas-up');
+        canvasUp.removeEventListener('mousemove', onMouseMove, false);
+        canvasUp.removeEventListener('mouseup', onMouseUp, false);
     }
 
     function onWheel(event) {
         event.preventDefault();
         if (event.deltaY < 0) _slider.value = parseFloat(_slider.value) - 0.05;
         if (event.deltaY > 0) _slider.value = parseFloat(_slider.value) + 0.05;
-        _renderCanvas();
+        onSliderChange();
     }
 
     // *********** visualizer content
@@ -363,7 +322,7 @@ var Interface = function() {
         _ballStateLists = [];
         // init listener
         _listener = new THREE.AudioListener();
-        mesh2.add(_listener);
+        _myRenderer.getMainMesh().add(_listener);
 
         // must use let sid, otherwise sid will always be the last id, when these audio is concurrently loaded
         for (let sid in _musicList) {
@@ -445,7 +404,7 @@ var Interface = function() {
             }
         }
         _ballList[cid].material.visible = vis;
-        _renderCanvas();
+        _myRenderer.renderCanvas();
     }
 
     function printLog(str) {
