@@ -2,6 +2,8 @@
 asmr audio tools, written in JavaScript.
 
 
+- 2019.08.31: 增加了pathCtrl的模块和界面
+- 2019.08.30: 封装了左侧canvas为myRenderer类，增加了resize功能
 - 2019.08.29: 修正了音频读入时顺序调换的bug；增加了音频的上传功能
 - 2019.08.28: 增加一个log窗口
 - 2019.08.27: 增加多个球体链接到音频

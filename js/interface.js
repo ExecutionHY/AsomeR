@@ -12,10 +12,10 @@ var Interface = function() {
 
     var _slider;
     var _listener;
-    var _sound;
     var _musicList;
     var _soundList;
     var _logTextarea;
+    var _pathCtrlList;
 
     var WIDTH = 600,
         HEIGHT = 450;
@@ -67,7 +67,6 @@ var Interface = function() {
             'donut\ hole.mp3',
         ]
 
-
         var musicCtrlDiv = document.createElement('div');
         musicCtrlDiv.id = 'music-ctrl';
         var musicListDiv = document.createElement('div');
@@ -103,6 +102,33 @@ var Interface = function() {
         musicCtrlDiv.appendChild(ctrlListDiv);
         rightContainer.appendChild(musicCtrlDiv);
 
+        // path control window
+        var pathControl = new PathControl();
+        var typeList = pathControl.getTypeList()
+        _pathCtrlList = [];
+
+        var pathCtrlDiv = document.createElement('div');
+        pathCtrlDiv.id = 'path-ctrl';
+        var pathSelect = document.createElement('select');
+        pathSelect.id = 'path-select';
+
+        var emptyOption = document.createElement('option');
+        emptyOption.textContent = '+';
+        emptyOption.selected = 'selected';
+        emptyOption.style.display = 'none';
+        pathSelect.append(emptyOption);
+
+        for (tid in typeList) {
+            let option = document.createElement('option');
+            option.textContent = typeList[tid];
+            option.value = tid;
+            pathSelect.appendChild(option);
+        }
+
+        pathSelect.addEventListener('change', onSelectChange, false);
+        pathCtrlDiv.appendChild(pathSelect);
+        rightContainer.appendChild(pathCtrlDiv);
+
 
         // add listener for panning the obj in x-z plane
         var canvasUp = document.getElementById('canvas-up');
@@ -110,20 +136,48 @@ var Interface = function() {
         // moving obj in y-axis
         canvasUp.addEventListener('wheel', onWheel, false);
         _slider.addEventListener('mousemove', onSliderChange);
+        // auto resize
         window.addEventListener('resize', onWindowResize);
+        onWindowResize();
 
         _myRenderer.renderCanvas();
         printLog('canvas initialized.\n');
 
         loadSongs(musicListDiv, ctrlListDiv);
         window._myRenderer = _myRenderer;
-        onWindowResize();
 
     };
 
     //
     // internals
     //
+
+    function onSelectChange(e) {
+        var sel = e.target.options[e.target.selectedIndex].value;
+        var pathControl = new PathControl();
+
+        var pathCtrlDiv = document.getElementById('path-ctrl');
+        var pathDiv = document.createElement('div');
+        pathDiv.className = 'path';
+        var typeDiv = document.createElement('div');
+        typeDiv.className = 'arg-item';
+        typeDiv.textContent = e.target.options[e.target.selectedIndex].textContent;
+        pathDiv.appendChild(typeDiv);
+
+        var cfgList = pathControl.init(sel);
+        for (idx in cfgList['argNameList']) {
+            let argName = cfgList['argNameList'][idx];
+            let argValue = cfgList['default'][idx];
+            let argDiv = document.createElement('div');
+            argDiv.className = 'arg-item';
+            argDiv.textContent = argName + '=' + argValue;
+
+            pathDiv.appendChild(argDiv);
+        }
+        var pathSelect = document.getElementById('path-select');
+        pathCtrlDiv.insertBefore(pathDiv, pathSelect);
+        e.target.selectedIndex = 0;
+    }
 
     function onWindowResize() {
         WIDTH = window.innerWidth * 2 / 3.1;

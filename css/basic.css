@@ -136,3 +136,24 @@ body {
 .ctrl-sel :hover {
     background: darkgrey;
 }
+
+#path-ctrl {
+    height: 25%;
+    width: 100%;
+    margin-top: 2px;
+    overflow-y: scroll;
+    border-left: 2px solid lightsalmon;
+}
+
+#path-select {
+    outline: none;
+    margin: 10px;
+}
+
+.path {
+    display: flex;
+}
+
+.arg-item {
+    padding: 10px;
+}

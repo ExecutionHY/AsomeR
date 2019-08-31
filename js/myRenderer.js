@@ -7,6 +7,7 @@ var MyRenderer = function() {
     var _renderCanvas;
 
     var BGCOLOR = 0xcccdd4;
+    var BGCOLOR = 0x343235;
     var GREEN = 0x00ff00;
     var WHITE = 0xffffff;
 
@@ -20,15 +21,20 @@ var MyRenderer = function() {
         var axesHelper = new THREE.AxesHelper(0.5);
         _scene.add(axesHelper);
 
-        var pointLight = new THREE.PointLight(0xffffff, 1.0, 100, 2);
+        var pointLight = new THREE.PointLight(0xffffff, 0.7, 100, 2);
         pointLight.position.set(-3, 3, 3);
         _scene.add(pointLight);
+
+        var pointLight2 = new THREE.PointLight(0xffffff, 0.3, 100, 2);
+        pointLight2.position.set(3, 3, -3);
+        _scene.add(pointLight2);
 
         var ambient = new THREE.AmbientLight(0xffffff, 0.3);
         _scene.add(ambient);
 
         // basic
-        var geometry = new THREE.SphereGeometry(0.2, 100, 100);
+        var geometry = new THREE.IcosahedronGeometry(0.2, 0);
+        //var geometry = new THREE.SphereGeometry(0.2, 6, 6);
         var geometry2 = new THREE.BoxGeometry(0.6, 0.1, 0.1);
         // var material = new THREE.MeshNormalMaterial();
         var material = new THREE.MeshPhongMaterial({ color: 0xffffff });
