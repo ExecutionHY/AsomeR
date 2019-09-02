@@ -218,8 +218,15 @@ var Interface = function() {
     function onWindowResize() {
         WIDTH = window.innerWidth * 2 / 3.1;
         HEIGHT = window.innerHeight * 1 / 2.1;
-        PixelRatio = 1;
-        _myRenderer.resizeCanvas(WIDTH, HEIGHT, PixelRatio);
+        _myRenderer.resizeCanvas(WIDTH, HEIGHT);
+
+        var PixelRatio = 1;
+        try {
+            PixelRatio = window.devicePixelRatio;
+        } catch (err) {
+            console.warn(err);
+            PixelRatio = 1;
+        }
         _renderVis.setSize(WIDTH / 2 * PixelRatio, HEIGHT / 2 * PixelRatio);
 
         document.getElementById('left-canvas').style.width = WIDTH + 'px';

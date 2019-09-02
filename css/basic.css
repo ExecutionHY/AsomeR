@@ -12,10 +12,20 @@ body {
     width: 600px;
 }
 
+#left-canvas canvas {
+    width: 100% !important;
+    height: 50% !important;
+}
+
 #right-tools {
     height: 100%;
     width: 300px;
     padding-left: 1%;
+}
+
+#right-tools canvas {
+    width: 100% !important;
+    height: 25% !important;
 }
 
 .height-slider {

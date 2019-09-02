@@ -15,7 +15,7 @@ var MyRenderer = function() {
 
     var AUTOREFRESH = true;
 
-    this.init = function(dom, WIDTH, HEIGHT) {
+    this.init = function(dom, WIDTH = 600, HEIGHT = 450) {
 
         _meshList = [];
         _scene = new THREE.Scene();
@@ -57,9 +57,9 @@ var MyRenderer = function() {
         }
 
         // build main renderer
-        _renderer = new THREE.WebGLRenderer({ antialias: true });
+        _renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         _renderer.setSize(WIDTH, HEIGHT);
-        _renderer.setClearColor(BGCOLOR);
+        _renderer.setClearColor(BGCOLOR, 0.0);
 
         _camera = new THREE.PerspectiveCamera(70, 4 / 3, 0.01, 10);
         _camera.position.set(1.5, 1.5, 3);
@@ -85,8 +85,8 @@ var MyRenderer = function() {
         _rendererFromUp.domElement.id = 'canvas-up';
 
         if (!AUTOREFRESH) {
-            _controls.addEventListener('change', renderCanvas);
-            _controlsFromUp.addEventListener('change', renderCanvas);
+            _controls.addEventListener('change', this.renderCanvas);
+            _controlsFromUp.addEventListener('change', this.renderCanvas);
             this.renderOnce();
         }
 
