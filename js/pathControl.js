@@ -1,8 +1,8 @@
 var PathControl = function() {
     var _configList = [
-        { 'type': 'eclipse', 'argNameList': ['a', 'b', 'ω'], 'default': [1, 1, 1] },
+        { 'type': 'eclipse', 'argNameList': ['a', 'b', 'ω'], 'default': [2, 1, 1] },
         { 'type': 'polygon', 'argNameList': ['r', 'n', 'v'], 'default': [1, 3, 1] },
-        { 'type': 'y-sin', 'argNameList': ['ω'], 'default': [1] },
+        { 'type': 'y-sin', 'argNameList': ['a', 'ω'], 'default': [1, 1] },
     ];
     var _typeList = ['eclipse', 'polygon', 'y-sin']
     var _type;
@@ -20,7 +20,7 @@ var PathControl = function() {
         _argList = argList;
     }
     this.updatePos = function(pos) {
-        var t = (new Date()).getTime();
+        var t = (new Date()).getTime() / 1000;
         if (_type == 'eclipse') {
             var a = _argList[0];
             var b = _argList[1];
@@ -30,8 +30,9 @@ var PathControl = function() {
         } else if (_type == 'polygon') {
             // TODO
         } else if (_type == 'y-sin') {
-            var w = _argList[0];
-            pos.y = b * Math.sin(w * t);
+            var a = _argList[0];
+            var w = _argList[1];
+            pos.y = a * Math.sin(w * t);
         }
     }
 }

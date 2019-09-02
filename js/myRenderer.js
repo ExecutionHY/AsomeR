@@ -4,7 +4,6 @@ var MyRenderer = function() {
     var _cameraFromUp, _rendererFromUp, _controlsFromUp;
     var _colorList = [0xff5555, 0xffff55, 0x55Ff55, 0x5555ff];
     var mesh;
-    var _renderCanvas;
 
     var BGCOLOR = 0xcccdd4;
     var BGCOLOR = 0x343235;
@@ -14,11 +13,13 @@ var MyRenderer = function() {
     var _meshList;
     var _focusMid;
 
+    var AUTOREFRESH = true;
+
     this.init = function(dom, WIDTH, HEIGHT) {
 
         _meshList = [];
         _scene = new THREE.Scene();
-        var axesHelper = new THREE.AxesHelper(0.5);
+        var axesHelper = new THREE.AxesHelper(1.5);
         _scene.add(axesHelper);
 
         var pointLight = new THREE.PointLight(0xffffff, 0.7, 100, 2);
@@ -33,9 +34,9 @@ var MyRenderer = function() {
         _scene.add(ambient);
 
         // basic
-        var geometry = new THREE.IcosahedronGeometry(0.2, 0);
+        var geometry = new THREE.IcosahedronGeometry(0.8, 0);
         //var geometry = new THREE.SphereGeometry(0.2, 6, 6);
-        var geometry2 = new THREE.BoxGeometry(0.6, 0.1, 0.1);
+        var geometry2 = new THREE.BoxGeometry(2.0, 0.4, 0.4);
         // var material = new THREE.MeshNormalMaterial();
         var material = new THREE.MeshPhongMaterial({ color: 0xffffff });
         mesh = new THREE.Mesh(geometry, material);
@@ -44,13 +45,13 @@ var MyRenderer = function() {
         _scene.add(mesh2);
         //material.visible = false;
 
-        var ball = new THREE.SphereGeometry(0.02, 100, 100);
+        var ball = new THREE.SphereGeometry(0.2, 100, 100);
         _ballList = [];
         for (let i = 0; i < 4; i++) {
             let mtl = new THREE.MeshBasicMaterial({ color: _colorList[i] });
             mtl.visible = false;
             let mesh = new THREE.Mesh(ball, mtl);
-            mesh.position.z = 0.5;
+            mesh.position.z = 1.0;
             _ballList.push(mesh);
             _scene.add(mesh);
         }
@@ -61,10 +62,9 @@ var MyRenderer = function() {
         _renderer.setClearColor(BGCOLOR);
 
         _camera = new THREE.PerspectiveCamera(70, 4 / 3, 0.01, 10);
-        _camera.position.set(1, 1, 2);
+        _camera.position.set(1.5, 1.5, 3);
         //_camera.position.set(100, 100, 20);
         _camera.lookAt(0, 0, 0);
-        _camera.position.normalize();
         _controls = new THREE.OrbitControls(_camera, _renderer.domElement);
         _controls.enablePan = false;
 
@@ -74,7 +74,7 @@ var MyRenderer = function() {
         _rendererFromUp.setClearColor(BGCOLOR);
 
         _cameraFromUp = new THREE.PerspectiveCamera(70, 4 / 3, 0.01, 10);
-        _cameraFromUp.position.set(0, 1, 0);
+        _cameraFromUp.position.set(0, 3.674, 0); // sqrt(1.5^2+1.5^2+3^2)
         _cameraFromUp.lookAt(0, 0, 0);
         _controlsFromUp = new THREE.OrbitControls(_cameraFromUp, _renderer.domElement);
         _controlsFromUp.enablePan = false;
@@ -84,10 +84,12 @@ var MyRenderer = function() {
         dom.appendChild(_rendererFromUp.domElement);
         _rendererFromUp.domElement.id = 'canvas-up';
 
-        _controls.addEventListener('change', this.renderCanvas);
-        _controlsFromUp.addEventListener('change', this.renderCanvas);
+        if (!AUTOREFRESH) {
+            _controls.addEventListener('change', renderCanvas);
+            _controlsFromUp.addEventListener('change', renderCanvas);
+            this.renderOnce();
+        }
 
-        _renderCanvas = this.renderCanvas;
         var meshList = [];
         meshList.push({ 'obj': 'assets/private/1911-nosepad.obj' });
         meshList.push({ 'obj': 'assets/private/1911-frame.obj' });
@@ -97,6 +99,10 @@ var MyRenderer = function() {
         //_texture = THREE.ImageUtils.loadTexture("assets/1.jpg");
     }
 
+    function animate() {
+        requestAnimationFrame(animate);
+        this.renderCanvas();
+    }
 
 
     this.renderCanvas = function() {
@@ -109,6 +115,10 @@ var MyRenderer = function() {
         //_controlsFromUp.update();
         _rendererFromUp.render(_scene, _cameraFromUp);
 
+    }
+
+    this.renderOnce = function() {
+        if (!AUTOREFRESH) this.renderCanvas();
     }
 
     this.getBallList = function() {
@@ -142,8 +152,7 @@ var MyRenderer = function() {
                         child.scale.set(0.005, 0.005, 0.005);
                     }
                 });
-                //object.material = _basicMaterial;
-                _renderCanvas();
+                this.renderOnce();
             },
             // called when loading is in progresses
             function(xhr) {
@@ -175,7 +184,7 @@ var MyRenderer = function() {
         if (key == 'color') {
             _meshList[parseInt(mid)].material.color = new THREE.Color(value);
         }
-        this.renderCanvas();
+        this.renderOnce();
     }
 
     this.resizeCanvas = function(width, height, PixelRatio) {
@@ -198,6 +207,6 @@ var MyRenderer = function() {
         _cameraFromUp.updateProjectionMatrix();
         _rendererFromUp.setSize(width * PixelRatio, height * PixelRatio);
 
-        _renderCanvas();
+        this.renderOnce();
     };
 }

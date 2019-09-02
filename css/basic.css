@@ -65,7 +65,7 @@ body {
 }
 
 .song.active {
-    background: cyan;
+    background: lightskyblue;
 }
 
 #music-upload {
@@ -154,6 +154,23 @@ body {
     display: flex;
 }
 
+.arg-line {
+    width: 85%;
+    display: flex;
+}
+
 .arg-item {
     padding: 10px;
+}
+
+.path-switch {
+    width: 15%;
+    margin: 10px;
+    border: 1px solid gray;
+    text-align: center;
+    cursor: pointer;
+}
+
+.path-on {
+    background: lightsalmon;
 }

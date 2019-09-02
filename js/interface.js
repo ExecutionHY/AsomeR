@@ -115,7 +115,7 @@ var Interface = function() {
         var emptyOption = document.createElement('option');
         emptyOption.textContent = '+';
         emptyOption.selected = 'selected';
-        emptyOption.style.display = 'none';
+        //emptyOption.style.display = 'none';
         pathSelect.append(emptyOption);
 
         for (tid in typeList) {
@@ -140,12 +140,12 @@ var Interface = function() {
         window.addEventListener('resize', onWindowResize);
         onWindowResize();
 
-        _myRenderer.renderCanvas();
         printLog('canvas initialized.\n');
 
         loadSongs(musicListDiv, ctrlListDiv);
         window._myRenderer = _myRenderer;
 
+        mainAnimate();
     };
 
     //
@@ -155,14 +155,18 @@ var Interface = function() {
     function onSelectChange(e) {
         var sel = e.target.options[e.target.selectedIndex].value;
         var pathControl = new PathControl();
+        _pathCtrlList.push({ 'ctrl': pathControl, 'state': true });
 
         var pathCtrlDiv = document.getElementById('path-ctrl');
         var pathDiv = document.createElement('div');
         pathDiv.className = 'path';
+
+        var argLineDiv = document.createElement('div');
+        argLineDiv.className = 'arg-line';
         var typeDiv = document.createElement('div');
         typeDiv.className = 'arg-item';
         typeDiv.textContent = e.target.options[e.target.selectedIndex].textContent;
-        pathDiv.appendChild(typeDiv);
+        argLineDiv.appendChild(typeDiv);
 
         var cfgList = pathControl.init(sel);
         for (idx in cfgList['argNameList']) {
@@ -172,17 +176,49 @@ var Interface = function() {
             argDiv.className = 'arg-item';
             argDiv.textContent = argName + '=' + argValue;
 
-            pathDiv.appendChild(argDiv);
+            argLineDiv.appendChild(argDiv);
         }
+        pathDiv.appendChild(argLineDiv);
+
+        var pathSwitchDiv = document.createElement('div');
+        pathSwitchDiv.id = _pathCtrlList.length - 1;
+        pathSwitchDiv.className = 'path-switch';
+        pathSwitchDiv.classList.add('path-on');
+        pathSwitchDiv.textContent = 'ON';
+        pathSwitchDiv.addEventListener('click', onSwitchClick, false);
+        pathDiv.appendChild(pathSwitchDiv);
+
         var pathSelect = document.getElementById('path-select');
         pathCtrlDiv.insertBefore(pathDiv, pathSelect);
         e.target.selectedIndex = 0;
     }
 
+    function onSwitchClick(event) {
+        var idx = event.target.id;
+        _pathCtrlList[idx]['state'] = !_pathCtrlList[idx]['state'];
+        if (_pathCtrlList[idx]['state']) {
+            event.target.textContent = 'ON';
+            event.target.classList.add('path-on');
+        } else {
+            event.target.textContent = 'OFF';
+            event.target.classList.remove('path-on');
+        }
+    }
+
+    function mainAnimate() {
+        requestAnimationFrame(mainAnimate);
+        for (pid in _pathCtrlList) {
+            if (_pathCtrlList[pid]['state'])
+                _pathCtrlList[pid]['ctrl'].updatePos(_ballList[1].position);
+        }
+        _myRenderer.renderCanvas();
+    }
+
+
     function onWindowResize() {
         WIDTH = window.innerWidth * 2 / 3.1;
         HEIGHT = window.innerHeight * 1 / 2.1;
-        PixelRatio = 1
+        PixelRatio = 1;
         _myRenderer.resizeCanvas(WIDTH, HEIGHT, PixelRatio);
         _renderVis.setSize(WIDTH / 2 * PixelRatio, HEIGHT / 2 * PixelRatio);
 
@@ -215,7 +251,7 @@ var Interface = function() {
 
     function onSliderChange(event) {
         _ballList[0].position.y = _slider.value;
-        _myRenderer.renderCanvas();
+        _myRenderer.renderOnce();
     }
 
     function onMouseDown(event) {
@@ -241,7 +277,7 @@ var Interface = function() {
         _ballList[0].position.z += (_mouse.y - _panStart.y) * _panScale.y;
 
         _panStart.copy(_mouse);
-        _myRenderer.renderCanvas();
+        _myRenderer.renderOnce();
     }
 
     function onMouseUp(event) {
@@ -458,7 +494,7 @@ var Interface = function() {
             }
         }
         _ballList[cid].material.visible = vis;
-        _myRenderer.renderCanvas();
+        _myRenderer.renderOnce();
     }
 
     function printLog(str) {
