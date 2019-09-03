@@ -125,7 +125,7 @@ var Interface = function() {
             pathSelect.appendChild(option);
         }
 
-        pathSelect.addEventListener('change', onSelectChange, false);
+        pathSelect.addEventListener('change', onPathSelectChange, false);
         pathCtrlDiv.appendChild(pathSelect);
         rightContainer.appendChild(pathCtrlDiv);
 
@@ -152,22 +152,24 @@ var Interface = function() {
     // internals
     //
 
-    function onSelectChange(e) {
-        var sel = e.target.options[e.target.selectedIndex].value;
+    function onPathSelectChange(e) {
+        var sel = parseInt(e.target.options[e.target.selectedIndex].value);
         var pathControl = new PathControl();
-        _pathCtrlList.push({ 'ctrl': pathControl, 'state': true });
+        _pathCtrlList.push({ 'ctrl': pathControl, 'state': true, 'bid': -1 });
 
         var pathCtrlDiv = document.getElementById('path-ctrl');
         var pathDiv = document.createElement('div');
         pathDiv.id = _pathCtrlList.length - 1;
         pathDiv.className = 'path';
 
+        var typeDiv = document.createElement('div');
+        typeDiv.className = 'type-name';
+        typeDiv.textContent = e.target.options[e.target.selectedIndex].textContent + ":";
+        pathDiv.appendChild(typeDiv);
+
         var argLineDiv = document.createElement('div');
         argLineDiv.className = 'arg-line';
-        var typeDiv = document.createElement('div');
-        typeDiv.className = 'arg-item';
-        typeDiv.textContent = e.target.options[e.target.selectedIndex].textContent + ":";
-        argLineDiv.appendChild(typeDiv);
+        //argLineDiv.appendChild(typeDiv);
 
         var cfgList = pathControl.init(sel);
         for (idx in cfgList['argNameList']) {
@@ -187,43 +189,65 @@ var Interface = function() {
         }
         pathDiv.appendChild(argLineDiv);
 
-        var pathSwitchDiv = document.createElement('div');
-        pathSwitchDiv.id = _pathCtrlList.length - 1;
-        pathSwitchDiv.className = 'path-switch';
-        pathSwitchDiv.classList.add('path-on');
-        pathSwitchDiv.textContent = 'ON';
-        pathSwitchDiv.addEventListener('click', onSwitchClick, false);
-        pathDiv.appendChild(pathSwitchDiv);
+
+        var ballSelect = document.createElement('select');
+        ballSelect.className = 'ball-select';
+        for (let i = -1; i < 4; i++) {
+            let option = document.createElement('option');
+            option.textContent = i;
+            option.value = i;
+            ballSelect.appendChild(option);
+        }
+        ballSelect.addEventListener('change', onBallSelectChange, false);
+        pathDiv.appendChild(ballSelect);
+
+        // var pathSwitchDiv = document.createElement('div');
+        // pathSwitchDiv.id = _pathCtrlList.length - 1;
+        // pathSwitchDiv.className = 'path-switch';
+        // pathSwitchDiv.classList.add('path-on');
+        // pathSwitchDiv.textContent = 'ON';
+        // pathSwitchDiv.addEventListener('click', onSwitchClick, false);
+        // pathDiv.appendChild(pathSwitchDiv);
 
         var pathSelect = document.getElementById('path-select');
         pathCtrlDiv.insertBefore(pathDiv, pathSelect);
         e.target.selectedIndex = 0;
     }
 
-    function onArgValueChange(event) {
-        var pid = parseInt(event.target.parentNode.parentNode.id);
-        var value = parseInt(event.target.value);
-        var vid = parseInt(event.target.id);
+    function onBallSelectChange(e) {
+        var pid = parseInt(e.target.parentNode.id);
+        var bid = parseInt(e.target.options[e.target.selectedIndex].value);
+        _pathCtrlList[pid]['bid'] = bid;
+    }
+
+    function onArgValueChange(e) {
+        var pid = parseInt(e.target.parentNode.parentNode.id);
+        var value = parseInt(e.target.value);
+        var vid = parseInt(e.target.id);
         _pathCtrlList[pid]['ctrl'].setArg(vid, value);
     }
 
-    function onSwitchClick(event) {
-        var idx = event.target.id;
-        _pathCtrlList[idx]['state'] = !_pathCtrlList[idx]['state'];
-        if (_pathCtrlList[idx]['state']) {
-            event.target.textContent = 'ON';
-            event.target.classList.add('path-on');
-        } else {
-            event.target.textContent = 'OFF';
-            event.target.classList.remove('path-on');
-        }
-    }
+    // function onSwitchClick(event) {
+    //     var idx = event.target.id;
+    //     _pathCtrlList[idx]['state'] = !_pathCtrlList[idx]['state'];
+    //     if (_pathCtrlList[idx]['state']) {
+    //         event.target.textContent = 'ON';
+    //         event.target.classList.add('path-on');
+    //     } else {
+    //         event.target.textContent = 'OFF';
+    //         event.target.classList.remove('path-on');
+    //     }
+    // }
 
     function mainAnimate() {
         requestAnimationFrame(mainAnimate);
         for (pid in _pathCtrlList) {
-            if (_pathCtrlList[pid]['state'])
-                _pathCtrlList[pid]['ctrl'].updatePos(_ballList[1].position);
+            if (_pathCtrlList[pid]['state']) {
+                let bid = _pathCtrlList[pid]['bid'];
+                if (bid > -1) {
+                    _pathCtrlList[pid]['ctrl'].updatePos(_ballList[bid].position);
+                }
+            }
         }
         _myRenderer.renderCanvas();
     }

@@ -12,9 +12,9 @@ var PathControl = function() {
         return _typeList;
     }
     this.init = function(type) {
-        _type = _typeList[parseInt(type)];
-        _argList = _configList[parseInt(type)]['default'];
-        return _configList[parseInt(type)];
+        _type = _typeList[type];
+        _argList = _configList[type]['default'];
+        return _configList[type];
     }
     this.setArgList = function(argList) {
         _argList = argList;

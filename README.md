@@ -2,7 +2,7 @@
 asmr audio tools, written in JavaScript.
 
 
-- 2019.09.03: pathCtrl参数可修改；
+- 2019.09.03: pathCtrl参数可修改；绑定的球编号可修改
 - 2019.09.02: pathCtrl调试通过；增加了正多边形的路径控制
 - 2019.08.31: 增加了pathCtrl的模块和界面
 - 2019.08.30: 封装了左侧canvas为myRenderer类，增加了resize功能
