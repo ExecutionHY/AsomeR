@@ -16,8 +16,11 @@ var PathControl = function() {
         _argList = _configList[parseInt(type)]['default'];
         return _configList[parseInt(type)];
     }
-    this.changeArg = function(argList) {
+    this.setArgList = function(argList) {
         _argList = argList;
+    }
+    this.setArg = function(vid, value) {
+        _argList[vid] = value;
     }
     this.updatePos = function(pos) {
         // ms => sec

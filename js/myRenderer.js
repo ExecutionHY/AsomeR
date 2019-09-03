@@ -57,9 +57,9 @@ var MyRenderer = function() {
         }
 
         // build main renderer
-        _renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        _renderer = new THREE.WebGLRenderer({ antialias: true });
         _renderer.setSize(WIDTH, HEIGHT);
-        _renderer.setClearColor(BGCOLOR, 0.0);
+        _renderer.setClearColor(BGCOLOR);
 
         _camera = new THREE.PerspectiveCamera(70, 4 / 3, 0.01, 10);
         _camera.position.set(1.5, 1.5, 3);
@@ -149,10 +149,10 @@ var MyRenderer = function() {
                         _scene.add(child);
                         _meshList[mid] = child;
 
+                        //console.log(child.geometry.boundingSphere.radius);
                         child.scale.set(0.005, 0.005, 0.005);
                     }
                 });
-                this.renderOnce();
             },
             // called when loading is in progresses
             function(xhr) {

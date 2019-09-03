@@ -170,7 +170,15 @@ body {
 }
 
 .arg-item {
-    padding: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 2px;
+}
+
+.val-item {
+    margin: 5px;
+    padding: 5px;
+    width: 15px;
 }
 
 .path-switch {

@@ -159,13 +159,14 @@ var Interface = function() {
 
         var pathCtrlDiv = document.getElementById('path-ctrl');
         var pathDiv = document.createElement('div');
+        pathDiv.id = _pathCtrlList.length - 1;
         pathDiv.className = 'path';
 
         var argLineDiv = document.createElement('div');
         argLineDiv.className = 'arg-line';
         var typeDiv = document.createElement('div');
         typeDiv.className = 'arg-item';
-        typeDiv.textContent = e.target.options[e.target.selectedIndex].textContent;
+        typeDiv.textContent = e.target.options[e.target.selectedIndex].textContent + ":";
         argLineDiv.appendChild(typeDiv);
 
         var cfgList = pathControl.init(sel);
@@ -174,9 +175,15 @@ var Interface = function() {
             let argValue = cfgList['default'][idx];
             let argDiv = document.createElement('div');
             argDiv.className = 'arg-item';
-            argDiv.textContent = argName + '=' + argValue;
+            argDiv.textContent = argName + '=';
+            let valDiv = document.createElement('input');
+            valDiv.className = 'val-item';
+            valDiv.id = idx;
+            valDiv.value = argValue;
+            valDiv.addEventListener('change', onArgValueChange, false);
 
             argLineDiv.appendChild(argDiv);
+            argLineDiv.appendChild(valDiv);
         }
         pathDiv.appendChild(argLineDiv);
 
@@ -191,6 +198,13 @@ var Interface = function() {
         var pathSelect = document.getElementById('path-select');
         pathCtrlDiv.insertBefore(pathDiv, pathSelect);
         e.target.selectedIndex = 0;
+    }
+
+    function onArgValueChange(event) {
+        var pid = parseInt(event.target.parentNode.parentNode.id);
+        var value = parseInt(event.target.value);
+        var vid = parseInt(event.target.id);
+        _pathCtrlList[pid]['ctrl'].setArg(vid, value);
     }
 
     function onSwitchClick(event) {
