@@ -41,7 +41,8 @@ var MyRenderer = function() {
         var material = new THREE.MeshPhongMaterial({ color: 0xffffff });
         mesh = new THREE.Mesh(geometry, material);
         _scene.add(mesh);
-        var mesh2 = new THREE.Mesh(geometry2, material);
+        var material2 = new THREE.MeshPhongMaterial({ color: 0xffffff, specular: 0xffffff });
+        var mesh2 = new THREE.Mesh(geometry2, material2);
         _scene.add(mesh2);
         //material.visible = false;
 
@@ -61,7 +62,7 @@ var MyRenderer = function() {
         _renderer.setSize(WIDTH, HEIGHT);
         _renderer.setClearColor(BGCOLOR);
 
-        _camera = new THREE.PerspectiveCamera(70, 4 / 3, 0.01, 10);
+        _camera = new THREE.PerspectiveCamera(70, 4 / 3, 0.01, 100);
         _camera.position.set(1.5, 1.5, 3);
         //_camera.position.set(100, 100, 20);
         _camera.lookAt(0, 0, 0);
@@ -73,7 +74,7 @@ var MyRenderer = function() {
         _rendererFromUp.setSize(WIDTH, HEIGHT);
         _rendererFromUp.setClearColor(BGCOLOR);
 
-        _cameraFromUp = new THREE.PerspectiveCamera(70, 4 / 3, 0.01, 10);
+        _cameraFromUp = new THREE.PerspectiveCamera(70, 4 / 3, 0.01, 100);
         _cameraFromUp.position.set(0, 3.674, 0); // sqrt(1.5^2+1.5^2+3^2)
         _cameraFromUp.lookAt(0, 0, 0);
         _controlsFromUp = new THREE.OrbitControls(_cameraFromUp, _renderer.domElement);

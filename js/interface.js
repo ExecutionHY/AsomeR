@@ -14,6 +14,7 @@ var Interface = function() {
     var _listener;
     var _musicList;
     var _soundList;
+    var _playTimeList;
     var _logTextarea;
     var _pathCtrlList;
 
@@ -424,19 +425,31 @@ var Interface = function() {
         sound['analyserVis'].getFrequencyData();
         sound['uniformsVis'].tAudioData.value.needsUpdate = true;
         _renderVis.render(_sceneVis, _cameraVis);
+
+        for (sid in _soundList) {
+            if (_soundList[sid] != null && _soundList[sid]['play'] == true) {
+                var audioCtx = _soundList[sid]['sound'].context;
+                var barWidth = document.getElementById('music-list').offsetWidth;
+                var ptime = audioCtx.currentTime + _soundList[sid]['sound'].offset - _playTimeList[sid]['ctx-st'];
+                var leftPos = barWidth * ptime / _soundList[sid]['sound'].buffer.duration;
+                _playTimeList[sid]['vline'].style.left = leftPos + 'px';
+                console.log(ptime, _playTimeList[sid]['ctx-st'], audioCtx.currentTime, );
+            }
+        }
     }
 
     // *********** music list control
 
-    function clickSong(event) {
+    function clickSong(e) {
         // if this song is playing, pause it
         // change the style of this DIV
         // change VisId for VisRender
-        var sid = event.target.id;
+        var sid = e.target.id;
         if (_soundList[sid]['play'] == true) {
             _soundList[sid]['sound'].pause();
             _soundList[sid]['play'] = false;
-            event.target.classList.remove('active');
+            // update 'song-line' div
+            e.target.parentNode.classList.remove('active');
             _nextVisId = -1;
             for (ssid in _soundList) {
                 if (_soundList[ssid]['play'] == true) {
@@ -446,15 +459,16 @@ var Interface = function() {
         } else {
             _soundList[sid]['sound'].play();
             _soundList[sid]['play'] = true;
-            event.target.classList.add('active');
+            e.target.parentNode.classList.add('active');
             _nextVisId = sid;
+            _playTimeList[sid]['ctx-st'] = _soundList[sid]['sound'].context.currentTime;
         }
-
     }
 
     function loadSongs(musicListDiv, ctrlListDiv) {
 
         _ballStateLists = [];
+        _playTimeList = [];
         // init listener
         _listener = new THREE.AudioListener();
         _myRenderer.getMainMesh().add(_listener);
@@ -488,7 +502,6 @@ var Interface = function() {
             //_sound.setMaxDistance(0.2);
             //_sound.play();
             //visualizerLoad(_sound);
-
         });
 
     }
@@ -499,8 +512,15 @@ var Interface = function() {
         songDiv.textContent = songName;
         songDiv.className = 'song';
         songDiv.id = sid;
-        songDiv.addEventListener('click', clickSong, false);
-        musicListDiv.insertBefore(songDiv, musicListDiv.lastChild);
+        let vlineDiv = document.createElement('div');
+        vlineDiv.className = 'vertical-line';
+        _playTimeList.push({ 'vline': vlineDiv, 'ctx-st': 0 });
+        let songlineDiv = document.createElement('div');
+        songlineDiv.className = 'song-line';
+        songlineDiv.append(songDiv);
+        songlineDiv.append(vlineDiv);
+        songlineDiv.addEventListener('click', clickSong, false);
+        musicListDiv.insertBefore(songlineDiv, musicListDiv.lastChild);
         let ctrlDiv = document.createElement('div');
         ctrlDiv.className = 'ctrl-sel';
         let stateList = []
