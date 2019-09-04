@@ -6,6 +6,7 @@ window.onload = function() {
 var Interface = function() {
 
     var _myRenderer;
+    var _visualizer;
 
     var _ballList;
     var _ballStateLists;
@@ -13,8 +14,7 @@ var Interface = function() {
     var _slider;
     var _listener;
     var _musicList;
-    var _soundList;
-    var _playTimeList;
+    var _soundList, _playTimeList;
     var _logTextarea;
     var _pathCtrlList;
 
@@ -49,9 +49,11 @@ var Interface = function() {
 
         // add visualizer
         _soundList = [];
-        var visualizer = visualizerInit();
+        _playTimeList = [];
+        _visualizer = new Visualizer(WIDTH, HEIGHT);
+        //var visualizer = visualizerInit();
         var rightContainer = document.getElementById('right-tools');
-        rightContainer.appendChild(visualizer);
+        rightContainer.appendChild(_visualizer.init());
 
         // log textarea display
         var logDiv = document.createElement('div');
@@ -251,6 +253,19 @@ var Interface = function() {
             }
         }
         _myRenderer.renderCanvas();
+
+        // update vertical-line position by playing time
+        for (sid in _soundList) {
+            if (_soundList[sid] != null && _soundList[sid]['play'] == true && sid != _movingIdx) {
+                var audioCtx = _soundList[sid]['sound'].context;
+                var barWidth = document.getElementById('music-list').offsetWidth;
+                var ptime = audioCtx.currentTime + _soundList[sid]['sound'].offset - _playTimeList[sid]['ctx-st'];
+                if (ptime > _soundList[sid]['sound'].buffer.duration)
+                    ptime = ptime % _soundList[sid]['sound'].buffer.duration;
+                var leftPos = barWidth * ptime / _soundList[sid]['sound'].buffer.duration;
+                _playTimeList[sid]['vline'].style.left = leftPos + 'px';
+            }
+        }
     }
 
 
@@ -259,14 +274,7 @@ var Interface = function() {
         HEIGHT = window.innerHeight * 1 / 2.1;
         _myRenderer.resizeCanvas(WIDTH, HEIGHT);
 
-        var PixelRatio = 1;
-        try {
-            PixelRatio = window.devicePixelRatio;
-        } catch (err) {
-            console.warn(err);
-            PixelRatio = 1;
-        }
-        _renderVis.setSize(WIDTH / 2 * PixelRatio, HEIGHT / 2 * PixelRatio);
+        _visualizer.setSize(WIDTH / 2, HEIGHT / 2);
 
         document.getElementById('left-canvas').style.width = WIDTH + 'px';
         document.getElementById('right-tools').style.width = WIDTH / 2 + 'px';
@@ -300,14 +308,13 @@ var Interface = function() {
         _myRenderer.renderOnce();
     }
 
-    function onMouseDown(event) {
-        event.preventDefault();
-        switch (event.button) {
+    function onMouseDown(e) {
+        e.preventDefault();
+        switch (e.button) {
             case THREE.MOUSE.LEFT:
-                pickupObjects(event, _ballList[0]);
-                var canvasUp = document.getElementById('canvas-up');
-                canvasUp.addEventListener('mousemove', onMouseMove, false);
-                canvasUp.addEventListener('mouseup', onMouseUp, false);
+                pickupObjects(e, _ballList[0]);
+                e.target.addEventListener('mousemove', onMouseMove, false);
+                document.addEventListener('mouseup', onMouseUp, false);
                 break;
         }
     }
@@ -326,12 +333,13 @@ var Interface = function() {
         _myRenderer.renderOnce();
     }
 
-    function onMouseUp(event) {
-        event.preventDefault();
-        _movingState = 0;
-        var canvasUp = document.getElementById('canvas-up');
-        canvasUp.removeEventListener('mousemove', onMouseMove, false);
-        canvasUp.removeEventListener('mouseup', onMouseUp, false);
+    function onMouseUp(e) {
+        e.preventDefault();
+        if (e.target.id == 'canvas-up') {
+            _movingState = 0;
+            e.target.removeEventListener('mousemove', onMouseMove, false);
+            document.removeEventListener('mouseup', onMouseUp, false);
+        }
     }
 
     function onWheel(event) {
@@ -341,103 +349,6 @@ var Interface = function() {
         onSliderChange();
     }
 
-    // *********** visualizer content
-    var _renderVis, _sceneVis, _cameraVis, _materialVis;
-    var _currentVisId, _nextVisId;
-
-    function visualizerInit() {
-        _nextVisId = -1;
-        _currentVisId = -1;
-
-        _renderVis = new THREE.WebGLRenderer({ antialias: true });
-        _renderVis.setSize(WIDTH / 2, HEIGHT / 2);
-        _renderVis.setClearColor(0x000000);
-        _renderVis.setPixelRatio(window.devicePixelRatio);
-
-        _sceneVis = new THREE.Scene();
-        _cameraVis = new THREE.Camera();
-
-        //
-        //window.addEventListener('resize', onResize, false);
-
-        // draw the background color
-        _renderVis.render(_sceneVis, _cameraVis);
-
-        visualizerAnimate();
-        return _renderVis.domElement;
-    }
-
-    function visualizerLoad(uniformsVis) {
-
-        var VertexShaderSrc = `
-            varying vec2 vUv;
-            void main() {
-                vUv = uv;
-                gl_Position = vec4( position, 1.0 );
-            }
-        `;
-        var FragmentShaderSrc = `
-            uniform sampler2D tAudioData;
-            varying vec2 vUv;
-            void main() {
-                vec3 backgroundColor = vec3( 0.125, 0.125, 0.125 );
-                vec3 color = vec3( 1.0, 1.0, 0.0 );
-                float f = texture2D( tAudioData, vec2( vUv.x, 0.0 ) ).r;
-                float i = step( vUv.y, f ) * step( f - 0.0125, vUv.y );
-                gl_FragColor = vec4( mix( backgroundColor, color, i ), 1.0 );
-            }
-        `;
-        _materialVis = new THREE.ShaderMaterial({
-            uniforms: uniformsVis,
-            vertexShader: VertexShaderSrc,
-            fragmentShader: FragmentShaderSrc
-        });
-        var geometry = new THREE.PlaneBufferGeometry(1.95, 1.95);
-        var mesh = new THREE.Mesh(geometry, _materialVis);
-        _sceneVis = new THREE.Scene(); // refresh the scene
-        _sceneVis.add(mesh);
-    }
-
-    function visualizerAnimate() {
-        requestAnimationFrame(visualizerAnimate);
-        visualizerRender();
-    }
-
-    function visualizerRender() {
-
-        if (_soundList.length == 0) return;
-
-        if (_currentVisId != _nextVisId) {
-            _currentVisId = _nextVisId;
-            if (_currentVisId != -1) {
-                visualizerLoad(_soundList[_currentVisId]['uniformsVis']);
-            }
-        }
-        // if no song is playing, render a black page
-        if (_currentVisId == -1) {
-            _sceneVis = new THREE.Scene();
-            _renderVis.render(_sceneVis, _cameraVis);
-            return;
-        }
-        let sound = _soundList[_currentVisId];
-
-        // render the last song we played
-        sound['analyserVis'].getFrequencyData();
-        sound['uniformsVis'].tAudioData.value.needsUpdate = true;
-        _renderVis.render(_sceneVis, _cameraVis);
-
-        for (sid in _soundList) {
-            if (_soundList[sid] != null && _soundList[sid]['play'] == true) {
-                var audioCtx = _soundList[sid]['sound'].context;
-                var barWidth = document.getElementById('music-list').offsetWidth;
-                var ptime = audioCtx.currentTime + _soundList[sid]['sound'].offset - _playTimeList[sid]['ctx-st'];
-                var leftPos = barWidth * ptime / _soundList[sid]['sound'].buffer.duration;
-                _playTimeList[sid]['vline'].style.left = leftPos + 'px';
-                console.log(ptime, _playTimeList[sid]['ctx-st'], audioCtx.currentTime, );
-            }
-        }
-    }
-
     // *********** music list control
 
     function clickSong(e) {
@@ -445,30 +356,31 @@ var Interface = function() {
         // change the style of this DIV
         // change VisId for VisRender
         var sid = e.target.id;
+        var nextVisId = -1;
+        if (_soundList[sid] == null) return;
         if (_soundList[sid]['play'] == true) {
             _soundList[sid]['sound'].pause();
             _soundList[sid]['play'] = false;
             // update 'song-line' div
-            e.target.parentNode.classList.remove('active');
-            _nextVisId = -1;
+            e.target.classList.remove('active');
             for (ssid in _soundList) {
-                if (_soundList[ssid]['play'] == true) {
-                    _nextVisId = ssid;
+                if (_soundList[ssid] != null && _soundList[ssid]['play'] == true) {
+                    nextVisId = ssid;
                 }
             }
         } else {
             _soundList[sid]['sound'].play();
             _soundList[sid]['play'] = true;
-            e.target.parentNode.classList.add('active');
-            _nextVisId = sid;
+            e.target.classList.add('active');
+            nextVisId = sid;
             _playTimeList[sid]['ctx-st'] = _soundList[sid]['sound'].context.currentTime;
         }
+        _visualizer.setNextVisId(nextVisId);
     }
 
     function loadSongs(musicListDiv, ctrlListDiv) {
 
         _ballStateLists = [];
-        _playTimeList = [];
         // init listener
         _listener = new THREE.AudioListener();
         _myRenderer.getMainMesh().add(_listener);
@@ -499,6 +411,8 @@ var Interface = function() {
             _soundList[sid] = { 'id': sid, 'name': songName, 'sound': sound, 'uniformsVis': uniformsVis, 'analyserVis': analyserVis, 'play': false };
             console.log('song ' + sid + ': ' + songName + ' loaded');
             printLog('song ' + sid + ': ' + songName + ' loaded\n');
+
+            _visualizer.updateSoundList(_soundList);
             //_sound.setMaxDistance(0.2);
             //_sound.play();
             //visualizerLoad(_sound);
@@ -512,14 +426,23 @@ var Interface = function() {
         songDiv.textContent = songName;
         songDiv.className = 'song';
         songDiv.id = sid;
+        songDiv.addEventListener('click', clickSong, false);
+        let songContainer = document.createElement('div');
+        songContainer.className = 'song-container';
+        songContainer.appendChild(songDiv);
+
         let vlineDiv = document.createElement('div');
         vlineDiv.className = 'vertical-line';
+        vlineDiv.id = sid;
+        vlineDiv.style.left = '0px';
+        vlineDiv.addEventListener('mousedown', onVlineMouseDown, false);
         _playTimeList.push({ 'vline': vlineDiv, 'ctx-st': 0 });
+        _visualizer.updatePlayTimeList(_playTimeList);
+
         let songlineDiv = document.createElement('div');
         songlineDiv.className = 'song-line';
-        songlineDiv.append(songDiv);
+        songlineDiv.append(songContainer);
         songlineDiv.append(vlineDiv);
-        songlineDiv.addEventListener('click', clickSong, false);
         musicListDiv.insertBefore(songlineDiv, musicListDiv.lastChild);
         let ctrlDiv = document.createElement('div');
         ctrlDiv.className = 'ctrl-sel';
@@ -536,6 +459,51 @@ var Interface = function() {
         }
         ctrlListDiv.appendChild(ctrlDiv);
         _ballStateLists.push(stateList);
+    }
+
+    // ************* vertical-line dragging control
+    var _mouseStart;
+    var _movingVline;
+    var _movingIdx;
+
+    function onVlineMouseDown(e) {
+        e.preventDefault();
+        switch (e.button) {
+            case THREE.MOUSE.LEFT:
+                _movingVline = e.target;
+                _mouseStart = e.pageX;
+                _movingIdx = parseInt(e.target.id);
+                document.addEventListener('mousemove', onVlineMouseMove, false);
+                document.addEventListener('mouseup', onVlineMouseUp, false);
+                break;
+        }
+    }
+
+    function onVlineMouseMove(e) {
+        e.preventDefault();
+        var left = _movingVline.style.left;
+        var leftPos = parseFloat(left.slice(0, left.length - 2));
+        var newLeft = leftPos + e.pageX - _mouseStart;
+        _movingVline.style.left = newLeft + 'px';
+        _mouseStart = e.pageX;
+    }
+
+    function onVlineMouseUp(e) {
+        e.preventDefault();
+        document.removeEventListener('mousemove', onVlineMouseMove, false);
+        document.removeEventListener('mouseup', onVlineMouseUp, false);
+        var left = _movingVline.style.left;
+        var leftPos = parseFloat(left.slice(0, left.length - 2));
+        var barWidth = document.getElementById('music-list').offsetWidth;
+        var ptime = leftPos * _soundList[_movingIdx]['sound'].buffer.duration / barWidth;
+        if (ptime < 0) ptime = 0;
+        else if (ptime > _soundList[_movingIdx]['sound'].buffer.duration)
+            ptime = _soundList[_movingIdx]['sound'].buffer.duration;
+        _soundList[_movingIdx]['sound'].pause();
+        _soundList[_movingIdx]['sound'].offset = ptime;
+        _soundList[_movingIdx]['sound'].play();
+
+        _movingIdx = -1;
     }
 
     function clickCtrlItem(event) {

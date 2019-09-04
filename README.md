@@ -2,7 +2,7 @@
 asmr audio tools, written in JavaScript.
 
 
-- 2019.09.04: 音频进度实时展示
+- 2019.09.04: 音频进度实时展示；拖动音频进度条可以控制音频播放
 - 2019.09.03: pathCtrl参数可修改；绑定的球编号可修改
 - 2019.09.02: pathCtrl调试通过；增加了正多边形的路径控制
 - 2019.08.31: 增加了pathCtrl的模块和界面
@@ -14,3 +14,4 @@ asmr audio tools, written in JavaScript.
 TODO
 - 音频进度拖动，加一个竖线在音频div上
 - 音频音量修改
+- 增加其他的visualizer,[ref](https://github.com/iondrimba/threejs-audio-visualizer-two/blob/master/src/scripts/app.js)

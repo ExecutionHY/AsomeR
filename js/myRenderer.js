@@ -109,7 +109,6 @@ var MyRenderer = function() {
     this.renderCanvas = function() {
 
         //requestAnimationFrame(animate);
-
         //_controls.update();
         _renderer.render(_scene, _camera);
         _controlsFromUp.zoom = _controls.zoom;
@@ -131,6 +130,31 @@ var MyRenderer = function() {
     this.getCameraUp = function() {
         return _cameraFromUp;
     }
+
+    this.resizeCanvas = function(width, height, PixelRatio) {
+
+        // 自动计算屏幕像素比
+        if (!PixelRatio) {
+            try {
+                PixelRatio = window.devicePixelRatio;
+            } catch (err) {
+                console.warn(err);
+                PixelRatio = 1;
+            }
+        }
+
+        _camera.aspect = width / height;
+        _camera.updateProjectionMatrix();
+        _renderer.setSize(width * PixelRatio, height * PixelRatio);
+
+        _cameraFromUp.aspect = width / height;
+        _cameraFromUp.updateProjectionMatrix();
+        _rendererFromUp.setSize(width * PixelRatio, height * PixelRatio);
+
+        this.renderOnce();
+    };
+
+    //******** useless
 
     function loadOBJ(URL, mid) {
         // instantiate a loader
@@ -187,27 +211,4 @@ var MyRenderer = function() {
         }
         this.renderOnce();
     }
-
-    this.resizeCanvas = function(width, height, PixelRatio) {
-
-        // 自动计算屏幕像素比
-        if (!PixelRatio) {
-            try {
-                PixelRatio = window.devicePixelRatio;
-            } catch (err) {
-                console.warn(err);
-                PixelRatio = 1;
-            }
-        }
-
-        _camera.aspect = width / height;
-        _camera.updateProjectionMatrix();
-        _renderer.setSize(width * PixelRatio, height * PixelRatio);
-
-        _cameraFromUp.aspect = width / height;
-        _cameraFromUp.updateProjectionMatrix();
-        _rendererFromUp.setSize(width * PixelRatio, height * PixelRatio);
-
-        this.renderOnce();
-    };
 }

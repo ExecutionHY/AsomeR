@@ -44,7 +44,7 @@ body {
 
 #log-div {
     height: 25%;
-    border-left: 2px solid black;
+    border-left: 2px solid lightgreen;
     margin-top: -2px;
 }
 
@@ -79,13 +79,17 @@ body {
     box-sizing: border-box;
 }
 
+.song-container :hover {
+    background: lightcyan;
+}
+
 .song-line {
     position: relative;
     height: 40px;
     cursor: pointer;
 }
 
-.song-line.active {
+.song.active {
     background: lightskyblue;
 }
 
@@ -103,10 +107,6 @@ body {
     width: 100%;
     padding: 10px;
     box-sizing: border-box;
-}
-
-#music-list :hover {
-    background: lightcyan;
 }
 
 #ctrl-list {
