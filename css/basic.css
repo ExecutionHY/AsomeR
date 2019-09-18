@@ -79,6 +79,10 @@ body {
     box-sizing: border-box;
 }
 
+.song-container {
+    width: 95%;
+}
+
 .song-container :hover {
     background: lightcyan;
 }
@@ -86,7 +90,9 @@ body {
 .song-line {
     position: relative;
     height: 40px;
+    width: 100%;
     cursor: pointer;
+    display: flex;
 }
 
 .song.active {
@@ -94,12 +100,24 @@ body {
 }
 
 .vertical-line {
-    float: left;
     position: absolute;
     width: 4px;
     height: 100%;
     background: black;
     cursor: move;
+}
+
+.vslider-container {
+    height: 100%;
+    width: 5%;
+    position: relative;
+}
+
+.volume-slider {
+    writing-mode: bt-lr;
+    -webkit-appearance: slider-vertical;
+    height: 100%;
+    width: 5px;
 }
 
 #music-upload {

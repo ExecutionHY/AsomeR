@@ -11,7 +11,7 @@ var Interface = function() {
     var _ballList;
     var _ballStateLists;
 
-    var _slider;
+    var _heightSlider;
     var _listener;
     var _musicList;
     var _soundList, _playTimeList;
@@ -37,14 +37,14 @@ var Interface = function() {
         _ballList = _myRenderer.getBallList();
 
 
-        _slider = document.createElement('INPUT');
-        _slider.type = 'range';
-        _slider.className = 'height-slider';
-        _slider.max = 0.4;
-        _slider.min = -0.4;
-        _slider.step = 0.005;
-        _slider.value = 0;
-        leftContainer.appendChild(_slider);
+        _heightSlider = document.createElement('INPUT');
+        _heightSlider.type = 'range';
+        _heightSlider.className = 'height-slider';
+        _heightSlider.max = 0.4;
+        _heightSlider.min = -0.4;
+        _heightSlider.step = 0.005;
+        _heightSlider.value = 0;
+        leftContainer.appendChild(_heightSlider);
 
 
         // add visualizer
@@ -138,7 +138,7 @@ var Interface = function() {
         canvasUp.addEventListener('mousedown', onMouseDown, false);
         // moving obj in y-axis
         canvasUp.addEventListener('wheel', onWheel, false);
-        _slider.addEventListener('mousemove', onSliderChange);
+        _heightSlider.addEventListener('mousemove', onHeightSliderChange);
         // auto resize
         window.addEventListener('resize', onWindowResize);
         onWindowResize();
@@ -154,93 +154,6 @@ var Interface = function() {
     //
     // internals
     //
-
-    function onPathSelectChange(e) {
-        var sel = parseInt(e.target.options[e.target.selectedIndex].value);
-        var pathControl = new PathControl();
-        _pathCtrlList.push({ 'ctrl': pathControl, 'state': true, 'bid': -1 });
-
-        var pathCtrlDiv = document.getElementById('path-ctrl');
-        var pathDiv = document.createElement('div');
-        pathDiv.id = _pathCtrlList.length - 1;
-        pathDiv.className = 'path';
-
-        var typeDiv = document.createElement('div');
-        typeDiv.className = 'type-name';
-        typeDiv.textContent = e.target.options[e.target.selectedIndex].textContent + ":";
-        pathDiv.appendChild(typeDiv);
-
-        var argLineDiv = document.createElement('div');
-        argLineDiv.className = 'arg-line';
-        //argLineDiv.appendChild(typeDiv);
-
-        var cfgList = pathControl.init(sel);
-        for (idx in cfgList['argNameList']) {
-            let argName = cfgList['argNameList'][idx];
-            let argValue = cfgList['default'][idx];
-            let argDiv = document.createElement('div');
-            argDiv.className = 'arg-item';
-            argDiv.textContent = argName + '=';
-            let valDiv = document.createElement('input');
-            valDiv.className = 'val-item';
-            valDiv.id = idx;
-            valDiv.value = argValue;
-            valDiv.addEventListener('change', onArgValueChange, false);
-
-            argLineDiv.appendChild(argDiv);
-            argLineDiv.appendChild(valDiv);
-        }
-        pathDiv.appendChild(argLineDiv);
-
-
-        var ballSelect = document.createElement('select');
-        ballSelect.className = 'ball-select';
-        for (let i = -1; i < 4; i++) {
-            let option = document.createElement('option');
-            option.textContent = i;
-            option.value = i;
-            ballSelect.appendChild(option);
-        }
-        ballSelect.addEventListener('change', onBallSelectChange, false);
-        pathDiv.appendChild(ballSelect);
-
-        // var pathSwitchDiv = document.createElement('div');
-        // pathSwitchDiv.id = _pathCtrlList.length - 1;
-        // pathSwitchDiv.className = 'path-switch';
-        // pathSwitchDiv.classList.add('path-on');
-        // pathSwitchDiv.textContent = 'ON';
-        // pathSwitchDiv.addEventListener('click', onSwitchClick, false);
-        // pathDiv.appendChild(pathSwitchDiv);
-
-        var pathSelect = document.getElementById('path-select');
-        pathCtrlDiv.insertBefore(pathDiv, pathSelect);
-        e.target.selectedIndex = 0;
-    }
-
-    function onBallSelectChange(e) {
-        var pid = parseInt(e.target.parentNode.id);
-        var bid = parseInt(e.target.options[e.target.selectedIndex].value);
-        _pathCtrlList[pid]['bid'] = bid;
-    }
-
-    function onArgValueChange(e) {
-        var pid = parseInt(e.target.parentNode.parentNode.id);
-        var value = parseInt(e.target.value);
-        var vid = parseInt(e.target.id);
-        _pathCtrlList[pid]['ctrl'].setArg(vid, value);
-    }
-
-    // function onSwitchClick(event) {
-    //     var idx = event.target.id;
-    //     _pathCtrlList[idx]['state'] = !_pathCtrlList[idx]['state'];
-    //     if (_pathCtrlList[idx]['state']) {
-    //         event.target.textContent = 'ON';
-    //         event.target.classList.add('path-on');
-    //     } else {
-    //         event.target.textContent = 'OFF';
-    //         event.target.classList.remove('path-on');
-    //     }
-    // }
 
     function mainAnimate() {
         requestAnimationFrame(mainAnimate);
@@ -268,6 +181,76 @@ var Interface = function() {
         }
     }
 
+    // add a new path
+    function onPathSelectChange(e) {
+        // build pathControl object
+        var sel = parseInt(e.target.options[e.target.selectedIndex].value);
+        var pathControl = new PathControl();
+        _pathCtrlList.push({ 'ctrl': pathControl, 'state': true, 'bid': -1 });
+
+        // one path-div contains type-name & arg-line & ball-select
+        var pathDiv = document.createElement('div');
+        pathDiv.id = _pathCtrlList.length - 1;
+        pathDiv.className = 'path';
+
+        var typeDiv = document.createElement('div');
+        typeDiv.className = 'type-name';
+        typeDiv.textContent = e.target.options[e.target.selectedIndex].textContent + ":";
+        pathDiv.appendChild(typeDiv);
+
+        var argLineDiv = document.createElement('div');
+        argLineDiv.className = 'arg-line';
+
+        // arg-line contains several [argument-div, value-input]
+        var cfgList = pathControl.init(sel);
+        for (idx in cfgList['argNameList']) {
+            let argName = cfgList['argNameList'][idx];
+            let argValue = cfgList['default'][idx];
+            let argDiv = document.createElement('div');
+            argDiv.className = 'arg-item';
+            argDiv.textContent = argName + '=';
+            let valDiv = document.createElement('input');
+            valDiv.className = 'val-item';
+            valDiv.id = idx;
+            valDiv.value = argValue;
+            valDiv.addEventListener('change', onArgValueChange, false);
+
+            argLineDiv.appendChild(argDiv);
+            argLineDiv.appendChild(valDiv);
+        }
+        pathDiv.appendChild(argLineDiv);
+
+        var ballSelect = document.createElement('select');
+        ballSelect.className = 'ball-select';
+        for (let i = -1; i < 4; i++) {
+            let option = document.createElement('option');
+            option.textContent = i;
+            option.value = i;
+            ballSelect.appendChild(option);
+        }
+        ballSelect.addEventListener('change', onBallSelectChange, false);
+        pathDiv.appendChild(ballSelect);
+
+        var pathCtrlDiv = document.getElementById('path-ctrl');
+        var pathSelect = document.getElementById('path-select');
+        pathCtrlDiv.insertBefore(pathDiv, pathSelect);
+        // reset selected index at default
+        e.target.selectedIndex = 0;
+    }
+
+    function onBallSelectChange(e) {
+        var pid = parseInt(e.target.parentNode.id);
+        var bid = parseInt(e.target.options[e.target.selectedIndex].value);
+        _pathCtrlList[pid]['bid'] = bid;
+    }
+
+    function onArgValueChange(e) {
+        var pid = parseInt(e.target.parentNode.parentNode.id);
+        var value = parseInt(e.target.value);
+        var vid = parseInt(e.target.id);
+        _pathCtrlList[pid]['ctrl'].setArg(vid, value);
+    }
+
 
     function onWindowResize() {
         WIDTH = window.innerWidth * 2 / 3.1;
@@ -281,6 +264,8 @@ var Interface = function() {
         document.getElementById('right-tools').style.height = HEIGHT * 2 + 'px';
     }
 
+    // ************* first ball moving control
+    // for convenience only ball[0] is movable
     var _mouse = new THREE.Vector2();
     var _panStart = new THREE.Vector2();
     var _panScale = new THREE.Vector2();
@@ -303,8 +288,8 @@ var Interface = function() {
         }
     }
 
-    function onSliderChange(event) {
-        _ballList[0].position.y = _slider.value;
+    function onHeightSliderChange(event) {
+        _ballList[0].position.y = _heightSlider.value;
         _myRenderer.renderOnce();
     }
 
@@ -344,9 +329,9 @@ var Interface = function() {
 
     function onWheel(event) {
         event.preventDefault();
-        if (event.deltaY < 0) _slider.value = parseFloat(_slider.value) - 0.05;
-        if (event.deltaY > 0) _slider.value = parseFloat(_slider.value) + 0.05;
-        onSliderChange();
+        if (event.deltaY < 0) _heightSlider.value = parseFloat(_heightSlider.value) - 0.05;
+        if (event.deltaY > 0) _heightSlider.value = parseFloat(_heightSlider.value) + 0.05;
+        onHeightSliderChange();
     }
 
     // *********** music list control
@@ -427,10 +412,12 @@ var Interface = function() {
         songDiv.className = 'song';
         songDiv.id = sid;
         songDiv.addEventListener('click', clickSong, false);
+        // hover selector need a container as parentNode
         let songContainer = document.createElement('div');
         songContainer.className = 'song-container';
         songContainer.appendChild(songDiv);
 
+        // vertical-line
         let vlineDiv = document.createElement('div');
         vlineDiv.className = 'vertical-line';
         vlineDiv.id = sid;
@@ -439,11 +426,28 @@ var Interface = function() {
         _playTimeList.push({ 'vline': vlineDiv, 'ctx-st': 0 });
         _visualizer.updatePlayTimeList(_playTimeList);
 
+        let volumeSlider = document.createElement('INPUT');
+        volumeSlider.id = sid;
+        volumeSlider.type = 'range';
+        volumeSlider.className = 'volume-slider';
+        volumeSlider.max = 1;
+        volumeSlider.min = 0;
+        volumeSlider.step = 0.005;
+        volumeSlider.value = 0.5;
+        volumeSlider.addEventListener('mousemove', onVolumeSliderChange);
+        let vsliderDiv = document.createElement('div');
+        vsliderDiv.append(volumeSlider);
+
+        // song-line contains song-container & vline
         let songlineDiv = document.createElement('div');
         songlineDiv.className = 'song-line';
         songlineDiv.append(songContainer);
         songlineDiv.append(vlineDiv);
+        songlineDiv.append(vsliderDiv);
+        // insert this song-line before music-upload node
         musicListDiv.insertBefore(songlineDiv, musicListDiv.lastChild);
+
+        // control part
         let ctrlDiv = document.createElement('div');
         ctrlDiv.className = 'ctrl-sel';
         let stateList = []
@@ -459,6 +463,12 @@ var Interface = function() {
         }
         ctrlListDiv.appendChild(ctrlDiv);
         _ballStateLists.push(stateList);
+    }
+
+    function onVolumeSliderChange(e) {
+        let vol = e.target.value;
+        let sid = e.target.id;
+        _soundList[sid]['sound'].setVolume(vol);
     }
 
     // ************* vertical-line dragging control
@@ -499,13 +509,16 @@ var Interface = function() {
         if (ptime < 0) ptime = 0;
         else if (ptime > _soundList[_movingIdx]['sound'].buffer.duration)
             ptime = _soundList[_movingIdx]['sound'].buffer.duration;
-        _soundList[_movingIdx]['sound'].pause();
-        _soundList[_movingIdx]['sound'].offset = ptime;
-        _soundList[_movingIdx]['sound'].play();
+        if (_soundList[_movingIdx]['sound']['play'] == true) {
+            _soundList[_movingIdx]['sound'].pause();
+            _soundList[_movingIdx]['sound'].offset = ptime;
+            _soundList[_movingIdx]['sound'].play();
+        } else _soundList[_movingIdx]['sound'].offset = ptime;
 
         _movingIdx = -1;
     }
 
+    // click a ball to bind
     function clickCtrlItem(event) {
         var ctrlItem = event.target;
         var sid = parseInt(ctrlItem.getAttribute('sid'));
