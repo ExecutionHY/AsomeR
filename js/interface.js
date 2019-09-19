@@ -171,7 +171,7 @@ var Interface = function() {
         for (sid in _soundList) {
             if (_soundList[sid] != null && _soundList[sid]['play'] == true && sid != _movingIdx) {
                 var audioCtx = _soundList[sid]['sound'].context;
-                var barWidth = document.getElementById('music-list').offsetWidth;
+                var barWidth = document.getElementsByClassName('song-container')[0].offsetWidth;
                 var ptime = audioCtx.currentTime + _soundList[sid]['sound'].offset - _playTimeList[sid]['ctx-st'];
                 if (ptime > _soundList[sid]['sound'].buffer.duration)
                     ptime = ptime % _soundList[sid]['sound'].buffer.duration;
@@ -504,7 +504,7 @@ var Interface = function() {
         document.removeEventListener('mouseup', onVlineMouseUp, false);
         var left = _movingVline.style.left;
         var leftPos = parseFloat(left.slice(0, left.length - 2));
-        var barWidth = document.getElementById('music-list').offsetWidth;
+        var barWidth = document.getElementsByClassName('song-container')[0].offsetWidth;
         var ptime = leftPos * _soundList[_movingIdx]['sound'].buffer.duration / barWidth;
         if (ptime < 0) ptime = 0;
         else if (ptime > _soundList[_movingIdx]['sound'].buffer.duration)
